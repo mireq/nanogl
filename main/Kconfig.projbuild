@@ -1,0 +1,4 @@
+config BUILD_SIMULATOR
+	bool "Build simulator"
+	help
+		Build simulator using FreeRTOS posix simulator.
