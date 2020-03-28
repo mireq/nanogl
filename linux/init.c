@@ -15,7 +15,7 @@ static void graphic_loop(void *data) {
 }
 
 static void gui(void *data) {
-	static simulator_window_t window;
+	simulator_window_t window;
 
 	simulator_window_init(&window, 240, 240, RGB_565);
 
@@ -24,9 +24,7 @@ static void gui(void *data) {
 		for (size_t i = 0; i < (window.width * window.height); ++i) {
 			framebuffer[i] = rand() % 0xffff;
 		}
-		if (i == 0) {
-			simulator_window_flush(&window);
-		}
+		simulator_window_flush(&window);
 		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 
