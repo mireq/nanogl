@@ -15,6 +15,7 @@ typedef struct simulator_window {
 	int glut_window;
 	fb_format color_format;
 	void *framebuffer;
+	int dirty;
 
 	GLuint vertex_buffer, element_buffer;
 	GLuint texture;
@@ -32,5 +33,6 @@ typedef struct simulator_window {
 
 void simulator_window_init(simulator_window_t *window, int width, int height, fb_format format);
 void simulator_window_destroy(simulator_window_t *window);
+void simulator_window_flush(simulator_window_t *window);
 void simulator_graphic_init(void);
 void simulator_graphic_process_events(void);

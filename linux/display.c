@@ -233,6 +233,9 @@ static void render(void) {
 		return;
 	}
 
+	int dirty = window->dirty;
+	window->dirty = 0;
+
 	glUseProgram(window->program);
 
 	GLenum format;
@@ -246,13 +249,15 @@ static void render(void) {
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, window->texture);
-	glTexImage2D(
-		GL_TEXTURE_2D, 0,
-		GL_RGB8,
-		window->width, window->height, 0,
-		format, type,
-		window->framebuffer
-	);
+	if (dirty) {
+		glTexImage2D(
+			GL_TEXTURE_2D, 0,
+			GL_RGB8,
+			window->width, window->height, 0,
+			format, type,
+			window->framebuffer
+		);
+	}
 	glUniform1i(window->uniforms.texture, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, window->vertex_buffer);
@@ -288,6 +293,10 @@ static void destroy_resources(simulator_window_t *window) {
 	destroy_buffer(window->vertex_buffer);
 }
 
+void simulator_window_flush(simulator_window_t *window) {
+	window->dirty = 1;
+}
+
 void simulator_graphic_init(void) {
 	argv[0] = app_name;
 
@@ -318,6 +327,7 @@ void simulator_window_init(simulator_window_t *window, int width, int height, fb
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	window->width = width;
 	window->height = height;
+	window->dirty = 1;
 
 	size_t pixel_size;
 	switch (format) {
