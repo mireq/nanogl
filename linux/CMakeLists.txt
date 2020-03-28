@@ -23,6 +23,7 @@ include_directories(
 add_executable(
 	${PROJECT_NAME}
 	"init.c"
+	"display.c"
 	"${CMAKE_SOURCE_DIR}/../main/main.c"
 )
 
