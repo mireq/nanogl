@@ -280,6 +280,7 @@ static void render(void) {
 	);
 
 	glDisableVertexAttribArray(window->attributes.position);
+
 	//glFlush();
 	glutSwapBuffers();
 }
@@ -325,8 +326,11 @@ void simulator_graphic_process_events(void) {
 
 void simulator_window_init(simulator_window_t *window, int width, int height, fb_format format) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
+	window_register(window);
+
 	window->width = width;
 	window->height = height;
+	window->color_format = format;
 	window->dirty = 1;
 
 	size_t pixel_size;
@@ -339,6 +343,7 @@ void simulator_window_init(simulator_window_t *window, int width, int height, fb
 	window->framebuffer = malloc(pixel_size * width * height);
 	if (window->framebuffer == NULL) {
 		ESP_LOGE(TAG, "Framebuffer not allocated");
+		window_unregister(window);
 		xSemaphoreGive(gl_mutex);
 		vTaskDelete(NULL);
 		return;
@@ -352,6 +357,7 @@ void simulator_window_init(simulator_window_t *window, int width, int height, fb
 	glewInit();
 	if (!GLEW_VERSION_3_0) {
 		ESP_LOGE(TAG, "OpenGL 3.0 not available");
+		window_unregister(window);
 		xSemaphoreGive(gl_mutex);
 		vTaskDelete(NULL);
 		return;
@@ -359,12 +365,12 @@ void simulator_window_init(simulator_window_t *window, int width, int height, fb
 
 	if (!make_resources(window)) {
 		ESP_LOGE(TAG, "Failed to load resources");
+		window_unregister(window);
 		xSemaphoreGive(gl_mutex);
 		vTaskDelete(NULL);
 		return;
 	}
 
-	window_register(window);
 	xSemaphoreGive(gl_mutex);
 }
 
