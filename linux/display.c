@@ -312,6 +312,15 @@ void simulator_graphic_init(void) {
 	}
 }
 
+void simulator_graphic_loop(void *data) {
+	while (1) {
+		simulator_graphic_process_events();
+		vTaskDelay(10 / portTICK_PERIOD_MS);
+	}
+
+	vTaskDelete(NULL);
+}
+
 void simulator_graphic_process_events(void) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	glutMainLoopEvent();

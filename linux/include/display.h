@@ -35,4 +35,5 @@ void simulator_window_init(simulator_window_t *window, int width, int height, fb
 void simulator_window_destroy(simulator_window_t *window);
 void simulator_window_flush(simulator_window_t *window);
 void simulator_graphic_init(void);
+void simulator_graphic_loop(void *data);
 void simulator_graphic_process_events(void);

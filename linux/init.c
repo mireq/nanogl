@@ -5,15 +5,6 @@
 #include "init.h"
 
 
-static void graphic_loop(void *data) {
-	while (1) {
-		simulator_graphic_process_events();
-		vTaskDelay(5 / portTICK_PERIOD_MS);
-	}
-
-	vTaskDelete(NULL);
-}
-
 static void gui(void *data) {
 	simulator_window_t window;
 
@@ -35,6 +26,6 @@ static void gui(void *data) {
 
 void app_init(void) {
 	simulator_graphic_init();
-	xTaskCreate(&graphic_loop, "graphic_loop", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(&simulator_graphic_loop, "graphic_loop", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 	xTaskCreate(&gui, "gui", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 }
