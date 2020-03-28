@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "display.h"
 
 
@@ -13,6 +14,8 @@ static const char* TAG = "init";
 static int argc = 1;
 static char *app_name = "simulator";
 static char *argv[1];
+
+SemaphoreHandle_t gl_mutex;
 
 
 typedef struct window_list {
@@ -272,8 +275,8 @@ static void render(void) {
 	);
 
 	glDisableVertexAttribArray(window->attributes.position);
-	glFlush();
-	//glutSwapBuffers();
+	//glFlush();
+	glutSwapBuffers();
 }
 
 
@@ -289,12 +292,18 @@ void simulator_graphic_init(void) {
 	argv[0] = app_name;
 
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE);
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
 	glutInitContextVersion(3, 0);
 	glutInitContextFlags(GLUT_CORE_PROFILE | GLUT_DEBUG);
+
+	gl_mutex = xSemaphoreCreateMutex();
+	if (gl_mutex == NULL) {
+		ESP_LOGE(TAG, "gl_mutex not created");
+	}
 }
 
 void simulator_graphic_process_events(void) {
+	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	glutMainLoopEvent();
 	window_list_t *current = &windows;
 	while (current->next) {
@@ -302,9 +311,11 @@ void simulator_graphic_process_events(void) {
 		glutSetWindow(current->window->glut_window);
 		glutPostRedisplay();
 	}
+	xSemaphoreGive(gl_mutex);
 }
 
 void simulator_window_init(simulator_window_t *window, int width, int height, fb_format format) {
+	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	window->width = width;
 	window->height = height;
 
@@ -318,6 +329,8 @@ void simulator_window_init(simulator_window_t *window, int width, int height, fb
 	window->framebuffer = malloc(pixel_size * width * height);
 	if (window->framebuffer == NULL) {
 		ESP_LOGE(TAG, "Framebuffer not allocated");
+		xSemaphoreGive(gl_mutex);
+		vTaskDelete(NULL);
 		return;
 	}
 
@@ -329,19 +342,26 @@ void simulator_window_init(simulator_window_t *window, int width, int height, fb
 	glewInit();
 	if (!GLEW_VERSION_3_0) {
 		ESP_LOGE(TAG, "OpenGL 3.0 not available");
+		xSemaphoreGive(gl_mutex);
 		vTaskDelete(NULL);
+		return;
 	}
 
 	if (!make_resources(window)) {
 		ESP_LOGE(TAG, "Failed to load resources");
+		xSemaphoreGive(gl_mutex);
 		vTaskDelete(NULL);
+		return;
 	}
 
 	window_register(window);
+	xSemaphoreGive(gl_mutex);
 }
 
 
 void simulator_window_destroy(simulator_window_t *window) {
+	xSemaphoreTake(gl_mutex, portMAX_DELAY);
+
 	if (window->framebuffer != NULL) {
 		destroy_resources(window);
 		free(window->framebuffer);
@@ -349,10 +369,6 @@ void simulator_window_destroy(simulator_window_t *window) {
 	}
 
 	window_unregister(window);
+
+	xSemaphoreGive(gl_mutex);
 }
-
-
-simulator_window_t *simulator_window_get() {
-	return window_get_by_glut_window(glutGetWindow());
-}
-
