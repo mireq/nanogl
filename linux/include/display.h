@@ -4,16 +4,16 @@
 #include <GL/freeglut.h>
 
 
-typedef enum fb_format_ {
+typedef enum simulator_fb_format_ {
 	RGB_565,
-} fb_format;
+} simulator_fb_format;
 
 
 typedef struct simulator_window {
 	int width;
 	int height;
 	int glut_window;
-	fb_format color_format;
+	simulator_fb_format color_format;
 	void *framebuffer;
 	int dirty;
 
@@ -31,7 +31,7 @@ typedef struct simulator_window {
 } simulator_window_t;
 
 
-void simulator_window_init(simulator_window_t *window, int width, int height, fb_format format);
+void simulator_window_init(simulator_window_t *window, int width, int height, simulator_fb_format format);
 void simulator_window_destroy(simulator_window_t *window);
 void simulator_window_flush(simulator_window_t *window);
 void simulator_graphic_init(void);

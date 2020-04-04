@@ -333,7 +333,7 @@ void simulator_graphic_process_events(void) {
 	xSemaphoreGive(gl_mutex);
 }
 
-void simulator_window_init(simulator_window_t *window, int width, int height, fb_format format) {
+void simulator_window_init(simulator_window_t *window, int width, int height, simulator_fb_format format) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	window_register(window);
 

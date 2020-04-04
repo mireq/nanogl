@@ -12,6 +12,7 @@ include_directories(
 	"${CMAKE_SOURCE_DIR}/../components/player/include/"
 	"${CMAKE_SOURCE_DIR}/../components/mad/include/"
 	"${CMAKE_SOURCE_DIR}/../components/"
+	"${CMAKE_SOURCE_DIR}/../components/nanogl/include/"
 	"${CMAKE_SOURCE_DIR}/../main/"
 	"$ENV{IDF_PATH}/components/log/include/"
 	"$ENV{IDF_PATH}/components/esp_common/include/"
@@ -25,6 +26,7 @@ add_executable(
 	"init.c"
 	"display.c"
 	"${CMAKE_SOURCE_DIR}/../main/main.c"
+	"${CMAKE_SOURCE_DIR}/../components/nanogl/nanogl.c"
 )
 
 add_definitions(-D_GNU_SOURCE -DSIMULATOR -g3 -ggdb)
