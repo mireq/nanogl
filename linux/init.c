@@ -17,9 +17,6 @@ static void gui(void *data) {
 			framebuffer[i] = rand() % 0xffff;
 		}
 		ngl_flush(&driver);
-		if (buf->area.x == 0) {
-			vTaskDelay(10 / portTICK_PERIOD_MS);
-		}
 	}
 
 	simulator_display_destroy(&driver);

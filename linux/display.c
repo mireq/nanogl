@@ -395,6 +395,7 @@ ngl_buffer_t *simulator_display_get_buffer(ngl_driver_t *driver) {
 void simulator_display_flush(ngl_driver_t *driver) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	simulator_window_t *window = (simulator_window_t *)driver->priv;
+	GLboolean finished = GL_FALSE;
 
 	if (window->current_buffer.area.y + window->buffer_lines >= driver->height) {
 		if (window->pixel_buffer_data != NULL) {
@@ -404,8 +405,13 @@ void simulator_display_flush(ngl_driver_t *driver) {
 			window->current_buffer.buffer = NULL;
 		}
 		window->current_buffer.area.y = 0;
+		finished = GL_TRUE;
 	}
 	xSemaphoreGive(gl_mutex);
+	if (finished) {
+		simulator_graphic_process_events();
+		vTaskDelay(10 / portTICK_PERIOD_MS);
+	}
 }
 
 void simulator_graphic_init(void) {
