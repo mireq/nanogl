@@ -338,7 +338,7 @@ static void destroy_resources(simulator_window_t *window) {
 	destroy_buffer(window->vertex_buffer);
 }
 
-simulator_framebuffer_t *simulator_get_buffer(simulator_window_t *window) {
+ngl_buffer_t *simulator_get_buffer(simulator_window_t *window) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 
 	if (window->pixel_buffer_data == NULL) {
@@ -348,13 +348,13 @@ simulator_framebuffer_t *simulator_get_buffer(simulator_window_t *window) {
 			ESP_LOGE(TAG, "Pixel buffer not mapped");
 		}
 		window->current_buffer.buffer = window->pixel_buffer_data;
-		window->current_buffer.y = 0;
-		window->current_buffer.height = window->buffer_lines;
+		window->current_buffer.area.y = 0;
+		window->current_buffer.area.height = window->buffer_lines;
 	}
 	else if (window->pixel_buffer_data != NULL) {
-		window->current_buffer.y += window->buffer_lines;
+		window->current_buffer.area.y += window->buffer_lines;
 		size_t pixel_size = get_pixel_size(window->color_format);
-		size_t buffer_offset = window->width * window->current_buffer.y * pixel_size;
+		size_t buffer_offset = window->width * window->current_buffer.area.y * pixel_size;
 		size_t screen_size = window->width * window->height * pixel_size;
 		size_t line_size = window->width * pixel_size;
 		window->current_buffer.buffer = window->pixel_buffer_data + buffer_offset;
@@ -362,7 +362,7 @@ simulator_framebuffer_t *simulator_get_buffer(simulator_window_t *window) {
 		if (buffer_height > window->buffer_lines) {
 			buffer_height = window->buffer_lines;
 		}
-		window->current_buffer.height = buffer_height;
+		window->current_buffer.area.height = buffer_height;
 	}
 
 	xSemaphoreGive(gl_mutex);
@@ -372,14 +372,14 @@ simulator_framebuffer_t *simulator_get_buffer(simulator_window_t *window) {
 void simulator_window_flush(simulator_window_t *window) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 
-	if (window->current_buffer.y + window->buffer_lines >= window->height) {
+	if (window->current_buffer.area.y + window->buffer_lines >= window->height) {
 		if (window->pixel_buffer_data != NULL) {
 			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
 			glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 			window->pixel_buffer_data = NULL;
 			window->current_buffer.buffer = NULL;
 		}
-		window->current_buffer.y = 0;
+		window->current_buffer.area.y = 0;
 	}
 	xSemaphoreGive(gl_mutex);
 }
@@ -434,10 +434,10 @@ void simulator_window_init(simulator_window_t *window, int width, int height, ng
 
 	window->pixel_buffer_data = NULL;
 	window->current_buffer.buffer = NULL;
-	window->current_buffer.x = 0;
-	window->current_buffer.y = 0;
-	window->current_buffer.width = width;
-	window->current_buffer.height = window->buffer_lines;
+	window->current_buffer.area.x = 0;
+	window->current_buffer.area.y = 0;
+	window->current_buffer.area.width = width;
+	window->current_buffer.area.height = window->buffer_lines;
 
 	glutInitWindowSize(width * 2, height * 2);
 	window->glut_window = glutCreateWindow("simulator");

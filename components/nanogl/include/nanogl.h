@@ -32,7 +32,7 @@ typedef struct ngl_driver {
 	ngl_driver_get_buffer_fn get_buffer;
 	ngl_driver_flush_fn flush;
 
-	void *handle;
+	void *priv;
 } ngl_driver_t;
 
 
