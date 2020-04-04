@@ -3,10 +3,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
-
-typedef enum simulator_fb_format_ {
-	RGB_565,
-} simulator_fb_format;
+#include "nanogl.h"
 
 
 typedef struct simulator_framebuffer {
@@ -22,7 +19,7 @@ typedef struct simulator_window {
 	int width;
 	int height;
 	int glut_window;
-	simulator_fb_format color_format;
+	ngl_fb_format_t color_format;
 	uint8_t *pixel_buffer_data;
 	simulator_framebuffer_t current_buffer;
 	size_t buffer_size;
@@ -42,7 +39,7 @@ typedef struct simulator_window {
 } simulator_window_t;
 
 
-void simulator_window_init(simulator_window_t *window, int width, int height, simulator_fb_format format, size_t buffer_size);
+void simulator_window_init(simulator_window_t *window, int width, int height, ngl_fb_format_t format, size_t buffer_size);
 void simulator_window_destroy(simulator_window_t *window);
 simulator_framebuffer_t *simulator_get_buffer(simulator_window_t *window);
 void simulator_window_flush(simulator_window_t *window);

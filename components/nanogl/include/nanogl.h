@@ -3,8 +3,9 @@
 struct ngl_driver;
 struct ngl_buffer;
 
-typedef ngl_buffer *(*ngl_driver_get_buffer_fn) (ngl_driver *driver);
-typedef void (*ngl_driver_flush_fn) (ngl_driver *driver);
+typedef struct ngl_buffer *(*ngl_driver_get_buffer_fn) (struct ngl_driver *driver);
+typedef void (*ngl_driver_flush_fn) (struct ngl_driver *driver);
+typedef unsigned char ngl_byte_t;
 
 typedef enum ngl_fb_format {
 	RGB_565,
@@ -19,24 +20,24 @@ typedef struct ngl_area {
 
 typedef struct ngl_buffer {
 	ngl_area_t area;
-	void *buffer;
+	ngl_byte_t *buffer;
 	struct ngl_driver *driver;
-} ngl_buffer;
+} ngl_buffer_t;
 
 typedef struct ngl_driver {
 	int width;
 	int height;
 	ngl_fb_format_t format;
 
-	void *user_data;
+	ngl_driver_get_buffer_fn get_buffer;
+	ngl_driver_flush_fn flush;
+
+	void *handle;
 } ngl_driver_t;
 
 
-void ngl_init(ngl_driver *driver);
-void ngl_destroy(ngl_driver *driver);
-
 /* Writes current buffer to device */
-void ngl_flush(ngl_driver *driver);
+void ngl_flush(ngl_driver_t *driver);
 
 /* Get next part of buffer in partial mode or secondary buffer in double buffer  mode */
-ngl_buffer *ngl_get_buffer(ngl_driver *driver);
+ngl_buffer_t *ngl_get_buffer(ngl_driver_t *driver);

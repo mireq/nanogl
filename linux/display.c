@@ -28,7 +28,7 @@ typedef struct window_list {
 static window_list_t windows = {NULL, NULL};
 
 
-static size_t get_pixel_size(simulator_fb_format format) {
+static size_t get_pixel_size(ngl_fb_format_t format) {
 	size_t pixel_size;
 	switch (format) {
 		case RGB_565:
@@ -39,7 +39,7 @@ static size_t get_pixel_size(simulator_fb_format format) {
 }
 
 
-static GLenum get_gl_pixel_format(simulator_fb_format format) {
+static GLenum get_gl_pixel_format(ngl_fb_format_t format) {
 	switch (format) {
 		case RGB_565:
 			return GL_RGB;
@@ -49,7 +49,7 @@ static GLenum get_gl_pixel_format(simulator_fb_format format) {
 }
 
 
-static GLenum get_gl_pixel_type(simulator_fb_format format) {
+static GLenum get_gl_pixel_type(ngl_fb_format_t format) {
 	switch (format) {
 		case RGB_565:
 			return GL_UNSIGNED_SHORT_5_6_5;
@@ -419,7 +419,7 @@ void simulator_graphic_process_events(void) {
 	xSemaphoreGive(gl_mutex);
 }
 
-void simulator_window_init(simulator_window_t *window, int width, int height, simulator_fb_format format, size_t buffer_size) {
+void simulator_window_init(simulator_window_t *window, int width, int height, ngl_fb_format_t format, size_t buffer_size) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	window_register(window);
 
