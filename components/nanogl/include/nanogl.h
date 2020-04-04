@@ -1,15 +1,26 @@
 #pragma once
 
+typedef enum ngl_fb_format {
+	NGL_RGB_565,
+} ngl_fb_format_t;
+
+typedef enum ngl_event {
+	NGL_EVENT_DRAW,
+	NGL_EVENT_INIT,
+	NGL_EVENT_DESTROY,
+	NGL_EVENT_RESHAPE,
+	NGL_EVENT_FRAME_START,
+	NGL_EVENT_FRAME_END,
+} ngl_event_t;
+
 struct ngl_driver;
 struct ngl_buffer;
+struct ngl_widget;
 
 typedef struct ngl_buffer *(*ngl_driver_get_buffer_fn) (struct ngl_driver *driver);
 typedef void (*ngl_driver_flush_fn) (struct ngl_driver *driver);
+typedef void (*ngl_widget_process_event_fn) (struct ngl_driver *driver, struct ngl_widget *widget, ngl_event_t event, void *data);
 typedef unsigned char ngl_byte_t;
-
-typedef enum ngl_fb_format {
-	RGB_565,
-} ngl_fb_format_t;
 
 typedef struct ngl_area {
 	int x;
@@ -35,9 +46,19 @@ typedef struct ngl_driver {
 	void *priv;
 } ngl_driver_t;
 
+typedef struct ngl_widget {
+	ngl_area_t area;
+	ngl_widget_process_event_fn process_event;
+
+	void *priv;
+} ngl_widget_t;
+
 
 /* Writes current buffer to device */
 void ngl_flush(ngl_driver_t *driver);
 
 /* Get next part of buffer in partial mode or secondary buffer in double buffer mode */
 ngl_buffer_t *ngl_get_buffer(ngl_driver_t *driver);
+
+/* Send events to widget list */
+void ngl_send_events(ngl_driver_t *driver, ngl_widget_t *widgets, ngl_event_t event, void *data);

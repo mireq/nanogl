@@ -8,7 +8,7 @@
 static void gui(void *data) {
 	ngl_driver_t driver;
 
-	simulator_display_init(&driver, 240, 240, RGB_565, 240 * 240 * 2);
+	simulator_display_init(&driver, 240, 240, NGL_RGB_565, 240 * 240 * 2);
 
 	for (size_t i = 0; i < 100; ++i) {
 		ngl_buffer_t *buf = ngl_get_buffer(&driver);

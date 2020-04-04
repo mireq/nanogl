@@ -52,7 +52,7 @@ static window_list_t windows = {NULL, NULL};
 
 static size_t get_pixel_size(ngl_fb_format_t format) {
 	switch (format) {
-		case RGB_565:
+		case NGL_RGB_565:
 			return sizeof(uint16_t);
 	}
 	return 0;
@@ -61,7 +61,7 @@ static size_t get_pixel_size(ngl_fb_format_t format) {
 
 static GLenum get_gl_pixel_format(ngl_fb_format_t format) {
 	switch (format) {
-		case RGB_565:
+		case NGL_RGB_565:
 			return GL_RGB;
 		default:
 			return 0;
@@ -71,7 +71,7 @@ static GLenum get_gl_pixel_format(ngl_fb_format_t format) {
 
 static GLenum get_gl_pixel_type(ngl_fb_format_t format) {
 	switch (format) {
-		case RGB_565:
+		case NGL_RGB_565:
 			return GL_UNSIGNED_SHORT_5_6_5;
 		default:
 			return 0;
