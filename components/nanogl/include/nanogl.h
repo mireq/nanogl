@@ -39,5 +39,5 @@ typedef struct ngl_driver {
 /* Writes current buffer to device */
 void ngl_flush(ngl_driver_t *driver);
 
-/* Get next part of buffer in partial mode or secondary buffer in double buffer  mode */
+/* Get next part of buffer in partial mode or secondary buffer in double buffer mode */
 ngl_buffer_t *ngl_get_buffer(ngl_driver_t *driver);
