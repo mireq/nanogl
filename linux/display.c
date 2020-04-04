@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -24,6 +25,38 @@ typedef struct window_list {
 } window_list_t;
 
 static window_list_t windows = {NULL, NULL};
+
+
+static size_t get_pixel_size(simulator_fb_format format) {
+	size_t pixel_size;
+	switch (format) {
+		case RGB_565:
+			pixel_size = sizeof(uint16_t);
+			break;
+	}
+	return pixel_size;
+}
+
+
+static GLenum get_gl_pixel_format(simulator_fb_format format) {
+	switch (format) {
+		case RGB_565:
+			return GL_RGB;
+		default:
+			return 0;
+	}
+}
+
+
+static GLenum get_gl_pixel_type(simulator_fb_format format) {
+	switch (format) {
+		case RGB_565:
+			return GL_UNSIGNED_SHORT_5_6_5;
+		default:
+			return 0;
+	}
+}
+
 
 static void window_register(simulator_window_t *window) {
 	window_list_t *current = &windows;
@@ -85,11 +118,12 @@ void main()\n\
 }";
 
 
-static GLuint make_buffer(GLenum target, const void *buffer_data, GLsizei buffer_size) {
+static GLuint make_buffer(GLenum target, const void *buffer_data, GLsizei buffer_size, GLenum usage) {
 	GLuint buffer;
 	glGenBuffers(1, &buffer);
 	glBindBuffer(target, buffer);
-	glBufferData(target, buffer_size, buffer_data, GL_STATIC_DRAW);
+	glBufferData(target, buffer_size, buffer_data, usage);
+	glBindBuffer(target, 0);
 	return buffer;
 }
 
@@ -183,12 +217,20 @@ static int make_resources(simulator_window_t *window)
 	window->vertex_buffer = make_buffer(
 		GL_ARRAY_BUFFER,
 		g_vertex_buffer_data,
-		sizeof(g_vertex_buffer_data)
+		sizeof(g_vertex_buffer_data),
+		GL_STATIC_DRAW
 	);
 	window->element_buffer = make_buffer(
 		GL_ELEMENT_ARRAY_BUFFER,
 		g_element_buffer_data,
-		sizeof(g_element_buffer_data)
+		sizeof(g_element_buffer_data),
+		GL_STATIC_DRAW
+	);
+	window->pixel_buffer = make_buffer(
+		GL_PIXEL_UNPACK_BUFFER,
+		NULL,
+		get_pixel_size(window->color_format) * window->width * window->height,
+		GL_STREAM_DRAW
 	);
 
 	window->texture = make_texture();
@@ -196,6 +238,17 @@ static int make_resources(simulator_window_t *window)
 	if (window->texture == 0) {
 		return 0;
 	}
+
+	const GLenum format = get_gl_pixel_format(window->color_format);
+	const GLenum type = get_gl_pixel_type(window->color_format);
+	glBindTexture(GL_TEXTURE_2D, window->texture);
+	glTexImage2D(
+		GL_TEXTURE_2D, 0,
+		GL_RGB8,
+		window->width, window->height, 0,
+		format, type,
+		0
+	);
 
 	window->vertex_shader = make_shader(
 		GL_VERTEX_SHADER,
@@ -233,31 +286,21 @@ static void render(void) {
 		return;
 	}
 
-	int dirty = window->dirty;
-	window->dirty = 0;
-
 	glUseProgram(window->program);
 
-	GLenum format;
-	GLenum type;
-	switch (window->color_format) {
-		case RGB_565:
-			format = GL_RGB;
-			type = GL_UNSIGNED_SHORT_5_6_5;
-			break;
-	}
+	const GLenum format = get_gl_pixel_format(window->color_format);
+	const GLenum type = get_gl_pixel_type(window->color_format);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, window->texture);
-	if (dirty) {
-		glTexImage2D(
-			GL_TEXTURE_2D, 0,
-			GL_RGB8,
-			window->width, window->height, 0,
-			format, type,
-			window->framebuffer
-		);
-	}
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
+	glTexSubImage2D(
+		GL_TEXTURE_2D, 0,
+		0, 0, window->width, window->height,
+		format, type,
+		0
+	);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	glUniform1i(window->uniforms.texture, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, window->vertex_buffer);
@@ -295,7 +338,15 @@ static void destroy_resources(simulator_window_t *window) {
 }
 
 void simulator_window_flush(simulator_window_t *window) {
-	window->dirty = 1;
+	xSemaphoreTake(gl_mutex, portMAX_DELAY);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
+	GLubyte* buffer_data = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+	if (buffer_data) {
+		memcpy(buffer_data, window->framebuffer, window->width * window->height * 2);
+		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+	}
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+	xSemaphoreGive(gl_mutex);
 }
 
 void simulator_graphic_init(void) {
@@ -340,14 +391,8 @@ void simulator_window_init(simulator_window_t *window, int width, int height, si
 	window->width = width;
 	window->height = height;
 	window->color_format = format;
-	window->dirty = 1;
 
-	size_t pixel_size;
-	switch (format) {
-		case RGB_565:
-			pixel_size = sizeof(uint16_t);
-			break;
-	}
+	size_t pixel_size = get_pixel_size(format);
 
 	window->framebuffer = malloc(pixel_size * width * height);
 	if (window->framebuffer == NULL) {
