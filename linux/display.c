@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -104,7 +105,7 @@ varying vec2 texcoord;\n\
 void main()\n\
 {\n\
 	gl_Position = vec4(position, 0.0, 1.0);\n\
-	texcoord = position * vec2(0.5) + vec2(0.5);\n\
+	texcoord = position * vec2(0.5, -0.5) + vec2(0.5);\n\
 }";
 
 static const GLchar fragment_shader_source[] = "#version 130\n\
@@ -205,10 +206,10 @@ static void destroy_program(GLuint program) {
 }
 
 static const GLfloat g_vertex_buffer_data[] = {
-	-1.0f, -1.0f,
-	 1.0f, -1.0f,
 	-1.0f,  1.0f,
-	 1.0f,  1.0f
+	 1.0f,  1.0f,
+	-1.0f, -1.0f,
+	 1.0f, -1.0f
 };
 static const GLushort g_element_buffer_data[] = { 0, 1, 2, 3 };
 
@@ -337,15 +338,50 @@ static void destroy_resources(simulator_window_t *window) {
 	destroy_buffer(window->vertex_buffer);
 }
 
+simulator_framebuffer_t *simulator_get_buffer(simulator_window_t *window) {
+	xSemaphoreTake(gl_mutex, portMAX_DELAY);
+
+	if (window->pixel_buffer_data == NULL) {
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
+		window->pixel_buffer_data = (uint8_t*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+		if (window->pixel_buffer_data == NULL) {
+			ESP_LOGE(TAG, "Pixel buffer not mapped");
+		}
+		window->current_buffer.buffer = window->pixel_buffer_data;
+		window->current_buffer.y = 0;
+		window->current_buffer.height = window->buffer_lines;
+	}
+	else if (window->pixel_buffer_data != NULL) {
+		window->current_buffer.y += window->buffer_lines;
+		size_t pixel_size = get_pixel_size(window->color_format);
+		size_t buffer_offset = window->width * window->current_buffer.y * pixel_size;
+		size_t screen_size = window->width * window->height * pixel_size;
+		size_t line_size = window->width * pixel_size;
+		window->current_buffer.buffer = window->pixel_buffer_data + buffer_offset;
+		int buffer_height = (screen_size - buffer_offset) / line_size;
+		if (buffer_height > window->buffer_lines) {
+			buffer_height = window->buffer_lines;
+		}
+		window->current_buffer.height = buffer_height;
+		printf("%d\n", buffer_height);
+	}
+
+	xSemaphoreGive(gl_mutex);
+	return &window->current_buffer;
+}
+
 void simulator_window_flush(simulator_window_t *window) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
-	GLubyte* buffer_data = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
-	if (buffer_data) {
-		memcpy(buffer_data, window->framebuffer, window->width * window->height * 2);
-		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+
+	if (window->current_buffer.y + window->buffer_lines >= window->height) {
+		if (window->pixel_buffer_data != NULL) {
+			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
+			glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+			window->pixel_buffer_data = NULL;
+			window->current_buffer.buffer = NULL;
+		}
+		window->current_buffer.y = 0;
 	}
-	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 	xSemaphoreGive(gl_mutex);
 }
 
@@ -384,7 +420,7 @@ void simulator_graphic_process_events(void) {
 	xSemaphoreGive(gl_mutex);
 }
 
-void simulator_window_init(simulator_window_t *window, int width, int height, simulator_fb_format format) {
+void simulator_window_init(simulator_window_t *window, int width, int height, simulator_fb_format format, size_t buffer_size) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	window_register(window);
 
@@ -393,15 +429,16 @@ void simulator_window_init(simulator_window_t *window, int width, int height, si
 	window->color_format = format;
 
 	size_t pixel_size = get_pixel_size(format);
+	assert(buffer_size >= width * pixel_size);
 
-	window->framebuffer = malloc(pixel_size * width * height);
-	if (window->framebuffer == NULL) {
-		ESP_LOGE(TAG, "Framebuffer not allocated");
-		window_unregister(window);
-		xSemaphoreGive(gl_mutex);
-		vTaskDelete(NULL);
-		return;
-	}
+	window->buffer_lines = buffer_size / (width * pixel_size);
+
+	window->pixel_buffer_data = NULL;
+	window->current_buffer.buffer = NULL;
+	window->current_buffer.x = 0;
+	window->current_buffer.y = 0;
+	window->current_buffer.width = width;
+	window->current_buffer.height = window->buffer_lines;
 
 	glutInitWindowSize(width * 2, height * 2);
 	window->glut_window = glutCreateWindow("simulator");
@@ -432,10 +469,10 @@ void simulator_window_init(simulator_window_t *window, int width, int height, si
 void simulator_window_destroy(simulator_window_t *window) {
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 
-	if (window->framebuffer != NULL) {
-		destroy_resources(window);
-		free(window->framebuffer);
-		glutDestroyWindow(window->glut_window);
+	if (window->pixel_buffer_data != NULL) {
+		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
+		glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+		window->pixel_buffer_data = NULL;
 	}
 
 	window_unregister(window);
