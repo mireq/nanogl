@@ -363,7 +363,6 @@ simulator_framebuffer_t *simulator_get_buffer(simulator_window_t *window) {
 			buffer_height = window->buffer_lines;
 		}
 		window->current_buffer.height = buffer_height;
-		printf("%d\n", buffer_height);
 	}
 
 	xSemaphoreGive(gl_mutex);
@@ -476,6 +475,7 @@ void simulator_window_destroy(simulator_window_t *window) {
 	}
 
 	window_unregister(window);
+	glutDestroyWindow(window->glut_window);
 
 	xSemaphoreGive(gl_mutex);
 }
