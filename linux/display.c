@@ -361,12 +361,13 @@ static void destroy_resources(ngl_driver_t *driver) {
 }
 
 ngl_buffer_t *simulator_display_get_buffer(ngl_driver_t *driver) {
-	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	simulator_window_t *window = (simulator_window_t *)driver->priv;
 
 	if (window->pixel_buffer_data == NULL) {
+		xSemaphoreTake(gl_mutex, portMAX_DELAY);
 		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
 		window->pixel_buffer_data = (uint8_t*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+		xSemaphoreGive(gl_mutex);
 		if (window->pixel_buffer_data == NULL) {
 			ESP_LOGE(TAG, "Pixel buffer not mapped");
 		}
@@ -388,18 +389,18 @@ ngl_buffer_t *simulator_display_get_buffer(ngl_driver_t *driver) {
 		window->current_buffer.area.height = buffer_height;
 	}
 
-	xSemaphoreGive(gl_mutex);
 	return &window->current_buffer;
 }
 
 void simulator_display_flush(ngl_driver_t *driver) {
-	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	simulator_window_t *window = (simulator_window_t *)driver->priv;
 	GLboolean finished = GL_FALSE;
 
 	if (window->current_buffer.area.y + window->buffer_lines >= driver->height) {
 		if (window->pixel_buffer_data != NULL) {
+			xSemaphoreTake(gl_mutex, portMAX_DELAY);
 			glBindBuffer(GL_PIXEL_UNPACK_BUFFER, window->pixel_buffer);
+			xSemaphoreGive(gl_mutex);
 			glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 			window->pixel_buffer_data = NULL;
 			window->current_buffer.buffer = NULL;
@@ -407,7 +408,6 @@ void simulator_display_flush(ngl_driver_t *driver) {
 		window->current_buffer.area.y = 0;
 		finished = GL_TRUE;
 	}
-	xSemaphoreGive(gl_mutex);
 	if (finished) {
 		simulator_graphic_process_events();
 		vTaskDelay(10 / portTICK_PERIOD_MS);

@@ -53,6 +53,11 @@ typedef struct ngl_widget {
 	void *priv;
 } ngl_widget_t;
 
+typedef struct ngl_widget_list {
+	ngl_widget_t *widget;
+	struct ngl_widget_list *next;
+} ngl_widget_list_t;
+
 
 /* Writes current buffer to device */
 void ngl_flush(ngl_driver_t *driver);
@@ -60,5 +65,10 @@ void ngl_flush(ngl_driver_t *driver);
 /* Get next part of buffer in partial mode or secondary buffer in double buffer mode */
 ngl_buffer_t *ngl_get_buffer(ngl_driver_t *driver);
 
+/* Send event to widget */
+void ngl_send_event(ngl_driver_t *driver, ngl_widget_t *widget, ngl_event_t event, void *data);
+
 /* Send events to widget list */
-void ngl_send_events(ngl_driver_t *driver, ngl_widget_t *widgets, ngl_event_t event, void *data);
+void ngl_send_events(ngl_driver_t *driver, ngl_widget_list_t *widgets, ngl_event_t event, void *data);
+
+
