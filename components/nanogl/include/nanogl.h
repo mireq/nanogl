@@ -1,8 +1,11 @@
 #pragma once
 
-typedef enum ngl_fb_format {
+typedef enum ngl_color_format {
+	NGL_MONO,
+	NGL_GRAY_2,
+	NGL_GRAY_8,
 	NGL_RGB_565,
-} ngl_fb_format_t;
+} ngl_color_format_t;
 
 typedef enum ngl_event {
 	NGL_EVENT_DRAW,
@@ -38,7 +41,7 @@ typedef struct ngl_buffer {
 typedef struct ngl_driver {
 	int width;
 	int height;
-	ngl_fb_format_t format;
+	ngl_color_format_t format;
 
 	ngl_driver_get_buffer_fn get_buffer;
 	ngl_driver_flush_fn flush;
@@ -70,5 +73,3 @@ void ngl_send_event(ngl_driver_t *driver, ngl_widget_t *widget, ngl_event_t even
 
 /* Send events to widget list */
 void ngl_send_events(ngl_driver_t *driver, ngl_widget_list_t *widgets, ngl_event_t event, void *data);
-
-

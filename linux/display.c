@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -56,7 +57,7 @@ typedef struct window_list {
 static window_list_t windows = {NULL, NULL};
 
 
-static size_t get_pixel_size(ngl_fb_format_t format) {
+static size_t get_pixel_size(ngl_color_format_t format) {
 	switch (format) {
 		case NGL_RGB_565:
 			return sizeof(uint16_t);
@@ -65,7 +66,7 @@ static size_t get_pixel_size(ngl_fb_format_t format) {
 }
 
 
-static GLenum get_gl_pixel_format(ngl_fb_format_t format) {
+static GLenum get_gl_pixel_format(ngl_color_format_t format) {
 	switch (format) {
 		case NGL_RGB_565:
 			return GL_RGB;
@@ -75,7 +76,7 @@ static GLenum get_gl_pixel_format(ngl_fb_format_t format) {
 }
 
 
-static GLenum get_gl_pixel_type(ngl_fb_format_t format) {
+static GLenum get_gl_pixel_type(ngl_color_format_t format) {
 	switch (format) {
 		case NGL_RGB_565:
 			return GL_UNSIGNED_SHORT_5_6_5;
@@ -468,7 +469,7 @@ static void simulator_graphic_init(void) {
 }
 
 
-void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_fb_format_t format, size_t buffer_size) {
+void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_color_format_t format, size_t buffer_size) {
 	simulator_graphic_init();
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	driver->priv = malloc(sizeof(simulator_window_t));

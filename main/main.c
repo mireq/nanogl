@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-#include "esp_log.h"
-#include "init.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+#include "init.h"
 
 
 void app_main(void)
