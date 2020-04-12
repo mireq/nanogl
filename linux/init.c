@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <stdint.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -25,9 +28,5 @@ static void gui(void *data) {
 }
 
 void app_init(void) {
-	putenv("vblank_mode=0");
-
-	simulator_graphic_init();
-	xTaskCreate(&simulator_graphic_loop, "graphic_loop", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 	xTaskCreate(&gui, "gui", configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 }

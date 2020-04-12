@@ -3,10 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <GL/glew.h>
+#include <GL/freeglut.h>
+
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/timers.h"
 #include "display.h"
 
 
@@ -16,9 +20,11 @@ static const char* TAG = "init";
 static int argc = 1;
 static char *app_name = "simulator";
 static char *argv[1];
+static GLboolean initialized = GL_FALSE;
 
 
 SemaphoreHandle_t gl_mutex;
+TimerHandle_t process_graphic_events_timer;
 
 
 typedef struct simulator_window {
@@ -360,7 +366,7 @@ static void destroy_resources(ngl_driver_t *driver) {
 	destroy_buffer(window->vertex_buffer);
 }
 
-ngl_buffer_t *simulator_display_get_buffer(ngl_driver_t *driver) {
+static ngl_buffer_t *simulator_display_get_buffer(ngl_driver_t *driver) {
 	simulator_window_t *window = (simulator_window_t *)driver->priv;
 
 	if (window->pixel_buffer_data == NULL) {
@@ -392,7 +398,22 @@ ngl_buffer_t *simulator_display_get_buffer(ngl_driver_t *driver) {
 	return &window->current_buffer;
 }
 
-void simulator_display_flush(ngl_driver_t *driver) {
+static void simulator_graphic_process_events(TimerHandle_t timer) {
+	xSemaphoreTake(gl_mutex, portMAX_DELAY);
+	glutMainLoopEvent();
+	window_list_t *current = &windows;
+	while (current->next) {
+		current = current->next;
+		glutSetWindow(((simulator_window_t *)current->driver->priv)->glut_window);
+		glutPostRedisplay();
+	}
+	for (size_t i = 0; i < 10; ++i) {
+		glutMainLoopEvent();
+	}
+	xSemaphoreGive(gl_mutex);
+}
+
+static void simulator_display_flush(ngl_driver_t *driver) {
 	simulator_window_t *window = (simulator_window_t *)driver->priv;
 	GLboolean finished = GL_FALSE;
 
@@ -409,12 +430,18 @@ void simulator_display_flush(ngl_driver_t *driver) {
 		finished = GL_TRUE;
 	}
 	if (finished) {
-		simulator_graphic_process_events();
-		vTaskDelay(10 / portTICK_PERIOD_MS);
+		simulator_graphic_process_events(process_graphic_events_timer);
+		vTaskDelay(20 / portTICK_PERIOD_MS);
 	}
 }
 
-void simulator_graphic_init(void) {
+static void simulator_graphic_init(void) {
+	if (initialized == GL_TRUE) {
+		return;
+	}
+
+	putenv("vblank_mode=0");
+
 	argv[0] = app_name;
 
 	glutInit(&argc, argv);
@@ -426,30 +453,23 @@ void simulator_graphic_init(void) {
 	if (gl_mutex == NULL) {
 		ESP_LOGE(TAG, "gl_mutex not created");
 	}
-}
 
-void simulator_graphic_loop(void *data) {
-	while (1) {
-		simulator_graphic_process_events();
-		vTaskDelay(10 / portTICK_PERIOD_MS);
+	process_graphic_events_timer = xTimerCreate("process_graphic_events", 20 / portTICK_PERIOD_MS, pdTRUE, 0, simulator_graphic_process_events);
+	if (process_graphic_events_timer == NULL) {
+		ESP_LOGE(TAG, "process_graphic_events_timer not allocated");
+		return;
+	}
+	if (xTimerStart(process_graphic_events_timer, 0) != pdPASS) {
+		ESP_LOGE(TAG, "process_graphic_events_timer not started");
+		return;
 	}
 
-	vTaskDelete(NULL);
+	initialized = GL_TRUE;
 }
 
-void simulator_graphic_process_events(void) {
-	xSemaphoreTake(gl_mutex, portMAX_DELAY);
-	glutMainLoopEvent();
-	window_list_t *current = &windows;
-	while (current->next) {
-		current = current->next;
-		glutSetWindow(((simulator_window_t *)current->driver->priv)->glut_window);
-		glutPostRedisplay();
-	}
-	xSemaphoreGive(gl_mutex);
-}
 
 void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_fb_format_t format, size_t buffer_size) {
+	simulator_graphic_init();
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	driver->priv = malloc(sizeof(simulator_window_t));
 	if (driver->priv == NULL) {
