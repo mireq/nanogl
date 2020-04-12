@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: MIT
+
 #pragma once
+
+#include <stddef.h>
+#include <stdint.h>
 
 typedef enum ngl_color_format {
 	NGL_MONO,
@@ -56,10 +61,15 @@ typedef struct ngl_widget {
 	void *priv;
 } ngl_widget_t;
 
-typedef struct ngl_widget_list {
-	ngl_widget_t *widget;
-	struct ngl_widget_list *next;
-} ngl_widget_list_t;
+typedef union ngl_color {
+	struct {
+		uint8_t r;
+		uint8_t g;
+		uint8_t b;
+		uint8_t a;
+	} rgba;
+	uint32_t value;
+} ngl_color_t;
 
 
 /* Writes current buffer to device */
@@ -68,11 +78,23 @@ void ngl_flush(ngl_driver_t *driver);
 /* Get next part of buffer in partial mode or secondary buffer in double buffer mode */
 ngl_buffer_t *ngl_get_buffer(ngl_driver_t *driver);
 
-
+/* Get number of bits for each pixel of selected color format */
 unsigned short ngl_get_color_bits(ngl_color_format_t color);
 
 /* Send event to widget */
 void ngl_send_event(ngl_driver_t *driver, ngl_widget_t *widget, ngl_event_t event, void *data);
 
 /* Send events to widget list */
-void ngl_send_events(ngl_driver_t *driver, ngl_widget_list_t *widgets, ngl_event_t event, void *data);
+void ngl_send_events(ngl_driver_t *driver, ngl_widget_t *widgets, size_t count, ngl_event_t event, void *data);
+
+/* Initialize widget */
+void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_events, ngl_area_t area, void *widget_priv);
+
+/* Destroy widget */
+void ngl_widget_destroy(ngl_driver_t *driver, ngl_widget_t *widget);
+
+/* Reshape widget */
+void ngl_widget_reshape(ngl_driver_t *driver, ngl_widget_t *widget, ngl_area_t area);
+
+/* Draw frame with widgets */
+void ngl_draw_frame(ngl_driver_t *driver, ngl_widget_t *widgets);
