@@ -68,6 +68,9 @@ void ngl_flush(ngl_driver_t *driver);
 /* Get next part of buffer in partial mode or secondary buffer in double buffer mode */
 ngl_buffer_t *ngl_get_buffer(ngl_driver_t *driver);
 
+
+unsigned short ngl_get_color_bits(ngl_color_format_t color);
+
 /* Send event to widget */
 void ngl_send_event(ngl_driver_t *driver, ngl_widget_t *widget, ngl_event_t event, void *data);
 

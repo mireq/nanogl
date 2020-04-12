@@ -57,15 +57,6 @@ typedef struct window_list {
 static window_list_t windows = {NULL, NULL};
 
 
-static size_t get_pixel_size(ngl_color_format_t format) {
-	switch (format) {
-		case NGL_RGB_565:
-			return sizeof(uint16_t);
-	}
-	return 0;
-}
-
-
 static GLenum get_gl_pixel_format(ngl_color_format_t format) {
 	switch (format) {
 		case NGL_RGB_565:
@@ -257,7 +248,7 @@ static int make_resources(ngl_driver_t *driver) {
 	window->pixel_buffer = make_buffer(
 		GL_PIXEL_UNPACK_BUFFER,
 		NULL,
-		get_pixel_size(driver->format) * driver->width * driver->height,
+		(ngl_get_color_bits(driver->format) >> 3) * driver->width * driver->height,
 		GL_STREAM_DRAW
 	);
 
@@ -384,7 +375,7 @@ static ngl_buffer_t *simulator_display_get_buffer(ngl_driver_t *driver) {
 	}
 	else if (window->pixel_buffer_data != NULL) {
 		window->current_buffer.area.y += window->buffer_lines;
-		size_t pixel_size = get_pixel_size(driver->format);
+		size_t pixel_size = ngl_get_color_bits(driver->format) >> 3;
 		size_t buffer_offset = driver->width * window->current_buffer.area.y * pixel_size;
 		size_t screen_size = driver->width * driver->height * pixel_size;
 		size_t line_size = driver->width * pixel_size;
@@ -470,6 +461,14 @@ static void simulator_graphic_init(void) {
 
 
 void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_color_format_t format, size_t buffer_size) {
+	switch (format) {
+		case NGL_RGB_565:
+			break;
+		default:
+			ESP_LOGE(TAG, "Not supported color format");
+			return;
+	}
+
 	simulator_graphic_init();
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
 	driver->priv = malloc(sizeof(simulator_window_t));
@@ -486,7 +485,7 @@ void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_col
 	driver->flush = simulator_display_flush;
 	driver->get_buffer = simulator_display_get_buffer;
 
-	size_t pixel_size = get_pixel_size(format);
+	size_t pixel_size = ngl_get_color_bits(format) >> 3;
 	assert(buffer_size >= width * pixel_size);
 
 	window->buffer_lines = buffer_size / (width * pixel_size);
