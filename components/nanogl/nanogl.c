@@ -23,6 +23,8 @@ unsigned short ngl_get_color_bits(ngl_color_format_t color) {
 			return 8;
 		case NGL_RGB_565:
 			return 16;
+		case NGL_RGB_888:
+			return 24;
 	}
 }
 

@@ -60,6 +60,7 @@ static window_list_t windows = {NULL, NULL};
 static GLenum get_gl_pixel_format(ngl_color_format_t format) {
 	switch (format) {
 		case NGL_RGB_565:
+		case NGL_RGB_888:
 			return GL_RGB;
 		default:
 			return 0;
@@ -71,6 +72,8 @@ static GLenum get_gl_pixel_type(ngl_color_format_t format) {
 	switch (format) {
 		case NGL_RGB_565:
 			return GL_UNSIGNED_SHORT_5_6_5;
+		case NGL_RGB_888:
+			return GL_UNSIGNED_BYTE;
 		default:
 			return 0;
 	}
@@ -463,6 +466,7 @@ static void simulator_graphic_init(void) {
 void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_color_format_t format, size_t buffer_size) {
 	switch (format) {
 		case NGL_RGB_565:
+		case NGL_RGB_888:
 			break;
 		default:
 			ESP_LOGE(TAG, "Not supported color format");

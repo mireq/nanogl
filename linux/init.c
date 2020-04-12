@@ -11,13 +11,13 @@
 static void gui(void *data) {
 	ngl_driver_t driver;
 
-	simulator_display_init(&driver, 240, 240, NGL_RGB_565, 240 * 240 * 2);
+	simulator_display_init(&driver, 240, 240, NGL_RGB_888, 240 * 240 * 2);
 
 	for (size_t i = 0; i < 100; ++i) {
 		ngl_buffer_t *buf = ngl_get_buffer(&driver);
-		uint16_t *framebuffer = (uint16_t *)buf->buffer;
-		for (size_t i = 0; i < (buf->area.width * buf->area.height); ++i) {
-			framebuffer[i] = rand() % 0xffff;
+		uint8_t *framebuffer = (uint8_t *)buf->buffer;
+		for (size_t i = 0; i < (buf->area.width * buf->area.height) * 3; ++i) {
+			framebuffer[i] = rand() % 0xff;
 		}
 		ngl_flush(&driver);
 	}

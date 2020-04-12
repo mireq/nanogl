@@ -10,6 +10,7 @@ typedef enum ngl_color_format {
 	NGL_GRAY_2,
 	NGL_GRAY_8,
 	NGL_RGB_565,
+	NGL_RGB_888,
 } ngl_color_format_t;
 
 typedef enum ngl_event {
