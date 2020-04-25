@@ -23,15 +23,38 @@ static void st7789_pre_cb(spi_transaction_t *transaction) {
 
 
 esp_err_t st7789_init(st7789_driver_t *driver) {
-	driver->buffer = (st7789_color_t *)heap_caps_malloc(driver->buffer_size * 2 * sizeof(st7789_color_t), MALLOC_CAP_DMA);
-	if (driver->buffer == NULL) {
+	driver->transactions = (spi_transaction_t *)heap_caps_malloc(driver->buffer_count * sizeof(spi_transaction_t), MALLOC_CAP_DMA);
+	if (driver->transactions == NULL) {
 		ESP_LOGE(TAG, "buffer not allocated");
 		return ESP_FAIL;
 	}
-	driver->buffer_a = driver->buffer;
-	driver->buffer_b = driver->buffer + driver->buffer_size;
-	driver->current_buffer = driver->buffer_a;
+	for (size_t i = 0; i < driver->buffer_count; ++i) {
+		memset(&driver->transactions[i], 0, sizeof(driver->transactions[i]));
+	}
+
+	driver->framebuffers = (st7789_color_t **)heap_caps_malloc(driver->buffer_count * sizeof(st7789_color_t *), MALLOC_CAP_DMA);
+	if (driver->framebuffers == NULL) {
+		heap_caps_free(driver->transactions);
+		ESP_LOGE(TAG, "buffer not allocated");
+		return ESP_FAIL;
+	}
+	for (size_t i = 0; i < driver->buffer_count; ++i) {
+		driver->framebuffers[i] = (st7789_color_t *)heap_caps_malloc(driver->buffer_size * sizeof(st7789_color_t), MALLOC_CAP_DMA);
+		if (driver->framebuffers[i] == NULL) {
+			for (size_t j = 0; j < i; ++j) {
+				heap_caps_free(driver->framebuffers[j]);
+			}
+			heap_caps_free(driver->framebuffers);
+			heap_caps_free(driver->transactions);
+			ESP_LOGE(TAG, "buffer not allocated");
+			return ESP_FAIL;
+		}
+	}
+
+	driver->current_buffer = driver->framebuffers[0];
 	driver->queue_fill = 0;
+	driver->spi = 0;
+	driver->current_buffer_num = 0;
 
 	driver->data.driver = driver;
 	driver->data.data = true;
@@ -56,7 +79,7 @@ esp_err_t st7789_init(st7789_driver_t *driver) {
 		.clock_speed_hz=SPI_MASTER_FREQ_40M,
 		.mode=3,
 		.spics_io_num=-1,
-		.queue_size=ST7789_SPI_QUEUE_SIZE,
+		.queue_size=driver->buffer_count,
 		.pre_cb=st7789_pre_cb,
 	};
 
@@ -70,6 +93,20 @@ esp_err_t st7789_init(st7789_driver_t *driver) {
 	}
 	ESP_LOGI(TAG, "driver initialized");
 	return ESP_OK;
+}
+
+
+void st7789_destroy(st7789_driver_t *driver) {
+	//free(driver->buffer);
+	//driver->buffer = NULL;
+
+	for (size_t i = 0; i < driver->buffer_count; ++i) {
+		heap_caps_free(driver->framebuffers[i]);
+	}
+	heap_caps_free(driver->framebuffers);
+	heap_caps_free(driver->transactions);
+	spi_bus_remove_device(driver->spi);
+	spi_bus_free(driver->spi_host);
 }
 
 
@@ -120,8 +157,8 @@ void st7789_lcd_init(st7789_driver_t *driver) {
 		{ST7789_CMD_VDVSET, 0, 1, (const uint8_t *)"\x20"},
 		// AVDD=6.8V, AVCL=-4.8V, VDDS=2.3V
 		{ST7789_CMD_PWCTRL1, 0, 2, (const uint8_t *)"\xa4\xa1"},
-		// 60 fps
-		{ST7789_CMD_FRCTR2, 0, 1, (const uint8_t *)"\x0f"},
+		// 111 fps
+		{ST7789_CMD_FRCTR2, 0, 1, (const uint8_t *)"\x01"},
 		// Gama 2.2
 		{ST7789_CMD_GAMSET, 0, 1, (const uint8_t *)"\x01"},
 		// Gama curve
@@ -192,8 +229,11 @@ void st7789_clear(st7789_driver_t *driver, st7789_color_t color) {
 }
 
 void st7789_fill_area(st7789_driver_t *driver, st7789_color_t color, uint16_t start_x, uint16_t start_y, uint16_t width, uint16_t height) {
-	for (size_t i = 0; i < driver->buffer_size * 2; ++i) {
-		driver->buffer[i] = color;
+	for (size_t j = 0; j < driver->buffer_count; ++j) {
+		st7789_color_t *buffer = driver->framebuffers[j];
+		for (size_t i = 0; i < driver->buffer_size; ++i) {
+			buffer[i] = color;
+		}
 	}
 	st7789_set_window(driver, start_x, start_y, start_x + width - 1, start_y + height - 1);
 
@@ -202,7 +242,7 @@ void st7789_fill_area(st7789_driver_t *driver, st7789_color_t color, uint16_t st
 
 	spi_transaction_t trans;
 	memset(&trans, 0, sizeof(trans));
-	trans.tx_buffer = driver->buffer;
+	trans.tx_buffer = driver->current_buffer;
 	trans.user = &driver->data;
 	trans.length = transfer_size * 8;
 	trans.rxlength = 0;
@@ -210,7 +250,7 @@ void st7789_fill_area(st7789_driver_t *driver, st7789_color_t color, uint16_t st
 	spi_transaction_t *rtrans;
 
 	while (bytes_to_write > 0) {
-		if (driver->queue_fill >= ST7789_SPI_QUEUE_SIZE) {
+		if (driver->queue_fill >= driver->buffer_count) {
 			spi_device_get_trans_result(driver->spi, &rtrans, portMAX_DELAY);
 			driver->queue_fill--;
 		}
@@ -246,9 +286,8 @@ void st7789_set_window(st7789_driver_t *driver, uint16_t start_x, uint16_t start
 }
 
 void st7789_write_pixels(st7789_driver_t *driver, st7789_color_t *pixels, size_t length) {
-	st7789_wait_until_queue_empty(driver);
+	spi_transaction_t *trans = &driver->transactions[driver->current_buffer_num];
 
-	spi_transaction_t *trans = driver->current_buffer == driver->buffer_a ? &driver->trans_a : &driver->trans_b;
 	memset(trans, 0, sizeof(&trans));
 	trans->tx_buffer = driver->current_buffer;
 	trans->user = &driver->data;
@@ -267,9 +306,22 @@ void st7789_wait_until_queue_empty(st7789_driver_t *driver) {
 	}
 }
 
+void st7789_wait_until_queue_free(st7789_driver_t *driver) {
+	spi_transaction_t *rtrans;
+	while (driver->queue_fill > driver->buffer_count - 2) {
+		spi_device_get_trans_result(driver->spi, &rtrans, portMAX_DELAY);
+		driver->queue_fill--;
+	}
+}
+
 void st7789_swap_buffers(st7789_driver_t *driver) {
+	st7789_wait_until_queue_free(driver);
 	st7789_write_pixels(driver, driver->current_buffer, driver->buffer_size);
-	driver->current_buffer = driver->current_buffer == driver->buffer_a ? driver->buffer_b : driver->buffer_a;
+	driver->current_buffer_num++;
+	if (driver->current_buffer_num >= driver->buffer_count) {
+		driver->current_buffer_num = 0;
+	}
+	driver->current_buffer = driver->framebuffers[driver->current_buffer_num];
 }
 
 

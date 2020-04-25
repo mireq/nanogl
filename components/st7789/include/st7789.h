@@ -7,9 +7,6 @@
 #include "esp_err.h"
 
 
-#define ST7789_SPI_QUEUE_SIZE 2
-
-
 // System Function Command Table 1
 #define ST7789_CMD_NOP               0x00 // No operation
 #define ST7789_CMD_SWRESET           0x01 // Software reset
@@ -117,14 +114,15 @@ typedef struct st7789_driver {
 	uint16_t display_height;
 	spi_device_handle_t spi;
 	size_t buffer_size;
+	size_t buffer_count;
 	st7789_transaction_data_t data;
 	st7789_transaction_data_t command;
-	st7789_color_t *buffer;
-	st7789_color_t *buffer_a;
-	st7789_color_t *buffer_b;
+
+	st7789_color_t **framebuffers;
+	spi_transaction_t *transactions;
+	size_t current_buffer_num;
+
 	st7789_color_t *current_buffer;
-	spi_transaction_t trans_a;
-	spi_transaction_t trans_b;
 } st7789_driver_t;
 
 typedef struct st7789_command {
@@ -135,6 +133,7 @@ typedef struct st7789_command {
 } st7789_command_t;
 
 esp_err_t st7789_init(st7789_driver_t *driver);
+void st7789_destroy(st7789_driver_t *driver);
 void st7789_reset(st7789_driver_t *driver);
 void st7789_lcd_init(st7789_driver_t *driver);
 void st7789_start_command(st7789_driver_t *driver);
