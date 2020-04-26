@@ -39,7 +39,7 @@ void gui(void *data) {
 		.width=240,
 		.height=240,
 		.buffer_lines=20,
-		.buffer_count=8,
+		.buffer_count=3,
 	};
 
 	ESP_ERROR_CHECK(st7789_ngl_driver_init(&driver, &ngl_init));
@@ -48,17 +48,22 @@ void gui(void *data) {
 		uint64_t ticks_before_frame = esp_cpu_get_ccount();
 		for (size_t j = 0; j < 12; ++j) {
 			//uint8_t val = rand() % 0xff;
-			uint8_t val = i % 256;
+			//uint8_t val = i % 256;
+			//uint8_t val = i % 256;
 			ngl_buffer_t *buf = ngl_get_buffer(&driver);
-			uint8_t *framebuffer = (uint8_t *)buf->buffer;
-			size_t bytes_count = (buf->area.width * buf->area.height) * 4;
+			ngl_color_t *framebuffer = (ngl_color_t *)buf->buffer;
+			//size_t bytes_count = (buf->area.width * buf->area.height) * 4;
 			/*
-			for (size_t i = 0; i < bytes_count; ++i) {
-				framebuffer[i] = val;
-			}
 			*/
-			if (j == 0) {
-				memset(framebuffer, val, bytes_count);
+			if (i == 0 && j == 0) {
+				//memset(framebuffer, val, bytes_count);
+				for (size_t y = 0; y < buf->area.height; ++y) {
+					for (size_t x = 0; x < buf->area.width; ++x) {
+						framebuffer[x + y * buf->area.width].rgba.r = x*256/buf->area.width;
+						framebuffer[x + y * buf->area.width].rgba.g = x*256/buf->area.width;
+						framebuffer[x + y * buf->area.width].rgba.b = x*256/buf->area.width;
+					}
+				}
 			}
 			ngl_flush(&driver);
 		}
@@ -73,5 +78,5 @@ void gui(void *data) {
 
 
 void app_init(void) {
-	xTaskCreate(&gui, "gui", configMINIMAL_STACK_SIZE + 2048, NULL, tskIDLE_PRIORITY, NULL);
+	xTaskCreate(&gui, "gui", configMINIMAL_STACK_SIZE + 2048, NULL, tskIDLE_PRIORITY + 1, NULL);
 }

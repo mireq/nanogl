@@ -117,6 +117,7 @@ typedef struct st7789_driver {
 	size_t buffer_count;
 	st7789_transaction_data_t data;
 	st7789_transaction_data_t command;
+	bool dither;
 
 	st7789_color_t **framebuffers;
 	spi_transaction_t *transactions;

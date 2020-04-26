@@ -229,16 +229,13 @@ void st7789_clear(st7789_driver_t *driver, st7789_color_t color) {
 }
 
 void st7789_fill_area(st7789_driver_t *driver, st7789_color_t color, uint16_t start_x, uint16_t start_y, uint16_t width, uint16_t height) {
-	for (size_t j = 0; j < driver->buffer_count; ++j) {
-		st7789_color_t *buffer = driver->framebuffers[j];
-		for (size_t i = 0; i < driver->buffer_size; ++i) {
-			buffer[i] = color;
-		}
+	for (size_t i = 0; i < driver->buffer_size; ++i) {
+		driver->current_buffer[i] = color;
 	}
 	st7789_set_window(driver, start_x, start_y, start_x + width - 1, start_y + height - 1);
 
 	size_t bytes_to_write = width * height * 2;
-	size_t transfer_size = driver->buffer_size * 2 * sizeof(st7789_color_t);
+	size_t transfer_size = driver->buffer_size * sizeof(st7789_color_t);
 
 	spi_transaction_t trans;
 	memset(&trans, 0, sizeof(trans));
@@ -250,7 +247,7 @@ void st7789_fill_area(st7789_driver_t *driver, st7789_color_t color, uint16_t st
 	spi_transaction_t *rtrans;
 
 	while (bytes_to_write > 0) {
-		if (driver->queue_fill >= driver->buffer_count) {
+		if (driver->queue_fill > 0) {
 			spi_device_get_trans_result(driver->spi, &rtrans, portMAX_DELAY);
 			driver->queue_fill--;
 		}
