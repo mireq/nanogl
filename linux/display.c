@@ -62,6 +62,8 @@ static GLenum get_gl_pixel_format(ngl_color_format_t format) {
 		case NGL_RGB_565:
 		case NGL_RGB_888:
 			return GL_RGB;
+		case NGL_RGBA:
+			return GL_RGBA;
 		default:
 			return 0;
 	}
@@ -73,6 +75,7 @@ static GLenum get_gl_pixel_type(ngl_color_format_t format) {
 		case NGL_RGB_565:
 			return GL_UNSIGNED_SHORT_5_6_5;
 		case NGL_RGB_888:
+		case NGL_RGBA:
 			return GL_UNSIGNED_BYTE;
 		default:
 			return 0;
@@ -467,6 +470,7 @@ void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_col
 	switch (format) {
 		case NGL_RGB_565:
 		case NGL_RGB_888:
+		case NGL_RGBA:
 			break;
 		default:
 			ESP_LOGE(TAG, "Not supported color format");
