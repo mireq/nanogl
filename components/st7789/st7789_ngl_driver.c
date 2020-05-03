@@ -151,7 +151,7 @@ esp_err_t st7789_ngl_driver_init(ngl_driver_t *driver, st7789_ngl_driver_init_st
 	driver_priv->buffer_size = driver->width * config->buffer_lines * 4;
 	driver_priv->buffer_lines = config->buffer_lines;
 	driver_priv->buffer.area.x = 0;
-	driver_priv->buffer.area.y = 0;
+	driver_priv->buffer.area.y = driver->height - config->buffer_lines;
 	driver_priv->buffer.area.width = driver->width;
 	driver_priv->buffer.area.height = driver->height;
 
