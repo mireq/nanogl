@@ -44,31 +44,25 @@ void gui(void *data) {
 
 	ESP_ERROR_CHECK(st7789_ngl_driver_init(&driver, &ngl_init));
 
-	for (size_t i = 0; i < 1000; ++i) {
+	for (size_t frame = 0; frame < 100000; ++frame) {
 		uint64_t ticks_before_frame = esp_cpu_get_ccount();
-		for (size_t j = 0; j < 12; ++j) {
-			//uint8_t val = rand() % 0xff;
-			//uint8_t val = i % 256;
-			//uint8_t val = i % 256;
+		while (1) {
 			ngl_buffer_t *buf = ngl_get_buffer(&driver);
 			ngl_color_t *framebuffer = (ngl_color_t *)buf->buffer;
-			//size_t bytes_count = (buf->area.width * buf->area.height) * 4;
-			/*
-			*/
-			if (i == 0 && j == 0) {
-				//memset(framebuffer, val, bytes_count);
-				for (size_t y = 0; y < buf->area.height; ++y) {
-					for (size_t x = 0; x < buf->area.width; ++x) {
-						framebuffer[x + y * buf->area.width].rgba.r = x*256/buf->area.width;
-						framebuffer[x + y * buf->area.width].rgba.g = x*256/buf->area.width;
-						framebuffer[x + y * buf->area.width].rgba.b = x*256/buf->area.width;
-					}
+			for (size_t y = 0; y < buf->area.height; ++y) {
+				for (size_t x = 0; x < buf->area.width; ++x) {
+					framebuffer[x + y * buf->area.width].rgba.r = (x + buf->area.x)*256/driver.width;
+					framebuffer[x + y * buf->area.width].rgba.b = (y + buf->area.y)*256/driver.height;
+					framebuffer[x + y * buf->area.width].rgba.g = (framebuffer[x + y * buf->area.width].rgba.r + framebuffer[x + y * buf->area.width].rgba.b) >> 1;
 				}
 			}
 			ngl_flush(&driver);
+			if (buf->area.y + buf->area.height >= driver.height) {
+				break;
+			}
 		}
 		uint64_t ticks_after_frame = esp_cpu_get_ccount();
-		printf("\nf: %08d, time: %.4f", (int)i, ((double)ticks_after_frame - (double)ticks_before_frame) / 240000.0);
+		printf("\nf: %08d, time: %.4f", (int)frame, ((double)ticks_after_frame - (double)ticks_before_frame) / 240000.0);
 	}
 
 	ESP_ERROR_CHECK(st7789_ngl_driver_destroy(&driver));
