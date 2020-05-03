@@ -380,7 +380,13 @@ static ngl_buffer_t *simulator_display_get_buffer(ngl_driver_t *driver) {
 		window->current_buffer.area.height = window->buffer_lines;
 	}
 	else if (window->pixel_buffer_data != NULL) {
-		window->current_buffer.area.y += window->buffer_lines;
+		if (window->current_buffer.area.y + window->current_buffer.area.height >= driver->height) {
+			window->current_buffer.area.y = 0;
+		}
+		else {
+			window->current_buffer.area.y += window->buffer_lines;
+		}
+
 		size_t pixel_size = ngl_get_color_bits(driver->format) >> 3;
 		size_t buffer_offset = driver->width * window->current_buffer.area.y * pixel_size;
 		size_t screen_size = driver->width * driver->height * pixel_size;
@@ -424,7 +430,6 @@ static void simulator_display_flush(ngl_driver_t *driver) {
 			window->pixel_buffer_data = NULL;
 			window->current_buffer.buffer = NULL;
 		}
-		window->current_buffer.area.y = 0;
 		finished = GL_TRUE;
 	}
 	if (finished) {
