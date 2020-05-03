@@ -63,13 +63,16 @@ typedef struct ngl_widget {
 	void *priv;
 } ngl_widget_t;
 
+
+typedef struct ngl_rgba {
+	uint8_t r;
+	uint8_t g;
+	uint8_t b;
+	uint8_t a;
+} ngl_rgba_t;
+
 typedef union ngl_color {
-	struct {
-		uint8_t r;
-		uint8_t g;
-		uint8_t b;
-		uint8_t a;
-	} rgba;
+	ngl_rgba_t rgba;
 	uint32_t value;
 } ngl_color_t;
 
