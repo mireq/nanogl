@@ -44,4 +44,14 @@ void ngl_send_events(ngl_driver_t *driver, ngl_widget_t *widgets, size_t count, 
 }
 
 
+void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_events, ngl_area_t area, void *widget_priv, void *init_data) {
+	ngl_send_event(driver, widget, NGL_EVENT_INIT, init_data);
+	ngl_send_event(driver, widget, NGL_EVENT_RESHAPE, &area);
+}
+
+
+void ngl_draw_pixmap(ngl_buffer_t *target, ngl_buffer_t *source, ngl_area_t *crop, ngl_color_t color) {
+}
+
+
 #include "nanogl_widget_rectangle.c"

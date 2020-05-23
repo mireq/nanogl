@@ -21,6 +21,7 @@ typedef enum ngl_event {
 	NGL_EVENT_RESHAPE,
 	NGL_EVENT_FRAME_START,
 	NGL_EVENT_FRAME_END,
+	NGL_EVENT_USER = 1000,
 } ngl_event_t;
 
 struct ngl_driver;
@@ -93,7 +94,7 @@ void ngl_send_event(ngl_driver_t *driver, ngl_widget_t *widget, ngl_event_t even
 void ngl_send_events(ngl_driver_t *driver, ngl_widget_t *widgets, size_t count, ngl_event_t event, void *data);
 
 /* Initialize widget */
-void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_events, ngl_area_t area, void *widget_priv);
+void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_events, ngl_area_t area, void *widget_priv, void *init_data);
 
 /* Destroy widget */
 void ngl_widget_destroy(ngl_driver_t *driver, ngl_widget_t *widget);
@@ -103,3 +104,6 @@ void ngl_widget_reshape(ngl_driver_t *driver, ngl_widget_t *widget, ngl_area_t a
 
 /* Draw frame with widgets */
 void ngl_draw_frame(ngl_driver_t *driver, ngl_widget_t *widgets);
+
+/* Draw pixmap from source buffer to target buffer */
+void ngl_draw_pixmap(ngl_buffer_t *target, ngl_buffer_t *source, ngl_area_t *crop, ngl_color_t color);
