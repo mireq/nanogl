@@ -44,9 +44,36 @@ void ngl_send_events(ngl_driver_t *driver, ngl_widget_t *widgets, size_t count, 
 }
 
 
-void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_events, ngl_area_t area, void *widget_priv, void *init_data) {
+void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_event, ngl_area_t area, void *widget_priv, void *init_data) {
+	widget->process_event = process_event;
 	ngl_send_event(driver, widget, NGL_EVENT_INIT, init_data);
 	ngl_send_event(driver, widget, NGL_EVENT_RESHAPE, &area);
+}
+
+
+void ngl_widget_destroy(ngl_driver_t *driver, ngl_widget_t *widget) {
+	ngl_send_event(driver, widget, NGL_EVENT_DESTROY, NULL);
+}
+
+
+void ngl_widget_reshape(ngl_driver_t *driver, ngl_widget_t *widget, ngl_area_t area) {
+	ngl_send_event(driver, widget, NGL_EVENT_RESHAPE, &area);
+}
+
+
+void ngl_draw_frame(ngl_driver_t *driver, ngl_widget_t *widgets, size_t count) {
+	driver->frame++;
+
+	ngl_send_events(driver, widgets, count, NGL_EVENT_FRAME_START, NULL);
+
+	ngl_buffer_t *buf;
+	do {
+		buf = ngl_get_buffer(driver);
+		ngl_send_events(driver, widgets, count, NGL_EVENT_DRAW, buf);
+		ngl_flush(driver);
+	} while (buf->area.y + buf->area.height < driver->height);
+
+	ngl_send_events(driver, widgets, count, NGL_EVENT_FRAME_END, NULL);
 }
 
 

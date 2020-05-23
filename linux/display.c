@@ -484,6 +484,7 @@ void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_col
 
 	simulator_graphic_init();
 	xSemaphoreTake(gl_mutex, portMAX_DELAY);
+	driver->frame = 0;
 	driver->priv = malloc(sizeof(simulator_window_t));
 	if (driver->priv == NULL) {
 		ESP_LOGE(TAG, "Simulator window not allocated");

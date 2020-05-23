@@ -26,10 +26,12 @@ static long long get_us_time() {
 
 void gui_loop(ngl_driver_t *driver) {
 	long frame = 0;
-	ngl_buffer_t *buf;
+	//ngl_buffer_t *buf;
+	ngl_widget_t screen[] = {};
 	while (1) {
 		frame++;
 		uint64_t us_before_frame = get_us_time();
+		/*
 		do {
 			buf = ngl_get_buffer(driver);
 			ngl_color_t *framebuffer = (ngl_color_t *)buf->buffer;
@@ -42,6 +44,8 @@ void gui_loop(ngl_driver_t *driver) {
 			}
 			ngl_flush(driver);
 		} while (buf->area.y + buf->area.height < driver->height);
+		*/
+		ngl_draw_frame(driver, screen, sizeof(screen) / sizeof(ngl_widget_t));
 		uint64_t us_after_frame = get_us_time();
 		printf("\nf: %08ld, time: %.4f ms", frame, (double)(us_after_frame - us_before_frame) / 1000.);
 	}

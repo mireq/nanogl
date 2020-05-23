@@ -32,6 +32,7 @@ esp_err_t st7789_init(st7789_driver_t *driver) {
 		memset(&driver->transactions[i], 0, sizeof(driver->transactions[i]));
 	}
 
+	driver->frame = 0;
 	driver->framebuffers = (st7789_color_t **)heap_caps_malloc(driver->buffer_count * sizeof(st7789_color_t *), MALLOC_CAP_DMA);
 	if (driver->framebuffers == NULL) {
 		heap_caps_free(driver->transactions);
