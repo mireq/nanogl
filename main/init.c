@@ -7,13 +7,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "st7789_ngl_driver.h"
+#include "gui.h"
 #include "init.h"
-
-
-
-#include <string.h>
-#include "soc/cpu.h"
+#include "st7789_ngl_driver.h"
 
 
 #define ST7789_GPIO_RESET GPIO_NUM_19
@@ -44,6 +40,7 @@ void gui(void *data) {
 
 	ESP_ERROR_CHECK(st7789_ngl_driver_init(&driver, &ngl_init));
 
+	/*
 	for (size_t frame = 0; frame < 100000; ++frame) {
 		uint64_t ticks_before_frame = esp_cpu_get_ccount();
 		while (1) {
@@ -64,6 +61,8 @@ void gui(void *data) {
 		uint64_t ticks_after_frame = esp_cpu_get_ccount();
 		printf("\nf: %08d, time: %.4f", (int)frame, ((double)ticks_after_frame - (double)ticks_before_frame) / 240000.0);
 	}
+	*/
+	gui_loop(&driver);
 
 	ESP_ERROR_CHECK(st7789_ngl_driver_destroy(&driver));
 
