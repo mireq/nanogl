@@ -510,6 +510,7 @@ void simulator_display_init(ngl_driver_t *driver, int width, int height, ngl_col
 	window->current_buffer.area.y = 0;
 	window->current_buffer.area.width = width;
 	window->current_buffer.area.height = window->buffer_lines;
+	window->current_buffer.format = driver->format;
 
 	glutInitWindowSize(width * 2, height * 2);
 	window->glut_window = glutCreateWindow("simulator");

@@ -43,6 +43,7 @@ typedef struct ngl_area {
 typedef struct ngl_buffer {
 	ngl_area_t area;
 	ngl_byte_t *buffer;
+	ngl_color_format_t format;
 	struct ngl_driver *driver;
 } ngl_buffer_t;
 
@@ -80,13 +81,13 @@ typedef union ngl_color {
 
 
 /* Widget functions */
-typedef void (*ngl_on_draw_fn) (ngl_widget_t *widget, ngl_driver_t *driver, ngl_buffer_t *buffer);
-typedef void (*ngl_on_init_fn) (ngl_widget_t *widget, ngl_driver_t *driver, void *init_data);
-typedef void (*ngl_on_destroy_fn) (ngl_widget_t *widget, ngl_driver_t *driver);
-typedef void (*ngl_on_reshape_fn) (ngl_widget_t *widget, ngl_driver_t *driver, ngl_area_t *area);
-typedef void (*ngl_on_frame_start_fn) (ngl_widget_t *widget, ngl_driver_t *driver);
-typedef void (*ngl_on_frame_end_fn) (ngl_widget_t *widget, ngl_driver_t *driver);
-typedef void (*ngl_on_user_event_fn) (ngl_widget_t *widget, ngl_driver_t *driver, void *data);
+typedef void (*ngl_on_draw_fn) (ngl_driver_t *driver, ngl_widget_t *widget, ngl_buffer_t *buffer);
+typedef void (*ngl_on_init_fn) (ngl_driver_t *driver, ngl_widget_t *widget, void *init_data);
+typedef void (*ngl_on_destroy_fn) (ngl_driver_t *driver, ngl_widget_t *widget);
+typedef void (*ngl_on_reshape_fn) (ngl_driver_t *driver, ngl_widget_t *widget, ngl_area_t *area);
+typedef void (*ngl_on_frame_start_fn) (ngl_driver_t *driver, ngl_widget_t *widget);
+typedef void (*ngl_on_frame_end_fn) (ngl_driver_t *driver, ngl_widget_t *widget);
+typedef void (*ngl_on_user_event_fn) (ngl_driver_t *driver, ngl_widget_t *widget, ngl_event_t event, void *data);
 typedef struct ngl_widget_event_table {
 	ngl_on_draw_fn draw;
 	ngl_on_init_fn init;
@@ -96,6 +97,7 @@ typedef struct ngl_widget_event_table {
 	ngl_on_frame_end_fn frame_end;
 	ngl_on_user_event_fn user_event;
 } ngl_widget_event_table_t;
+void ngl_event_table_dispatch(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_event_table_t *table, ngl_event_t event, void *data);
 
 
 /* Writes current buffer to device */
@@ -111,7 +113,7 @@ unsigned short ngl_get_color_bits(ngl_color_format_t color);
 void ngl_send_event(ngl_driver_t *driver, ngl_widget_t *widget, ngl_event_t event, void *data);
 
 /* Send events to widget list */
-void ngl_send_events(ngl_driver_t *driver, ngl_widget_t *widgets, size_t count, ngl_event_t event, void *data);
+void ngl_send_events(ngl_driver_t *driver, ngl_widget_t **widgets, size_t count, ngl_event_t event, void *data);
 
 /* Initialize widget */
 void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_event, ngl_area_t area, void *widget_priv, void *init_data);
@@ -123,7 +125,10 @@ void ngl_widget_destroy(ngl_driver_t *driver, ngl_widget_t *widget);
 void ngl_widget_reshape(ngl_driver_t *driver, ngl_widget_t *widget, ngl_area_t area);
 
 /* Draw frame with widgets */
-void ngl_draw_frame(ngl_driver_t *driver, ngl_widget_t *widgets, size_t count);
+void ngl_draw_frame(ngl_driver_t *driver, ngl_widget_t **widgets, size_t count);
+
+/* Fill area with specific color */
+void ngl_fill_area(ngl_buffer_t *target, ngl_area_t *area, ngl_color_t color);
 
 /* Draw pixmap from source buffer to target buffer */
 void ngl_draw_pixmap(ngl_buffer_t *target, ngl_buffer_t *source, ngl_area_t *crop, ngl_color_t color);

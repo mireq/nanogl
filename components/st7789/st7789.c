@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,6 +50,9 @@ esp_err_t st7789_init(st7789_driver_t *driver) {
 			heap_caps_free(driver->transactions);
 			ESP_LOGE(TAG, "buffer not allocated");
 			return ESP_FAIL;
+		}
+		else {
+			driver->framebuffers[i].format = NGL_RGBA;
 		}
 	}
 

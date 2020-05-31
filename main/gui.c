@@ -5,6 +5,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 
+#include "nanogl/rectangle.h"
 #include "gui.h"
 
 
@@ -27,7 +28,24 @@ static long long get_us_time() {
 void gui_loop(ngl_driver_t *driver) {
 	long frame = 0;
 	//ngl_buffer_t *buf;
-	ngl_widget_t screen[] = {};
+
+	ngl_widget_rectangle_data_t rectangle_priv = {
+		.rgba.r = 255,
+		.rgba.g = 255,
+		.rgba.b = 255,
+		.rgba.a = 255
+	};
+	ngl_widget_t rectangle;
+	ngl_widget_init(
+		driver,
+		&rectangle,
+		ngl_widget_rectangle,
+		(ngl_area_t){.x = 100, .y = 100, .width = 40, .height = 40},
+		&rectangle_priv,
+		NULL
+	);
+
+	ngl_widget_t *screen[] = {&rectangle};
 	while (1) {
 		frame++;
 		uint64_t us_before_frame = get_us_time();
@@ -45,8 +63,8 @@ void gui_loop(ngl_driver_t *driver) {
 			ngl_flush(driver);
 		} while (buf->area.y + buf->area.height < driver->height);
 		*/
-		ngl_draw_frame(driver, screen, sizeof(screen) / sizeof(ngl_widget_t));
+		ngl_draw_frame(driver, screen, sizeof(screen) / sizeof(ngl_widget_t *));
 		uint64_t us_after_frame = get_us_time();
-		printf("\nf: %08ld, time: %.4f ms", frame, (double)(us_after_frame - us_before_frame) / 1000.);
+		printf("f: %08ld, time: %.4f ms\n", frame, (double)(us_after_frame - us_before_frame) / 1000.);
 	}
 }
