@@ -86,12 +86,12 @@ void ngl_send_events(ngl_driver_t *driver, ngl_widget_t **widgets, size_t count,
 }
 
 
-void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_event, ngl_area_t area, void *widget_priv, void *init_data) {
+void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_event, ngl_area_t *area, void *widget_priv, void *init_data) {
 	widget->process_event = process_event;
-	widget->area = area;
+	widget->area = *area;
 	widget->priv = widget_priv;
 	ngl_send_event(driver, widget, NGL_EVENT_INIT, init_data);
-	ngl_send_event(driver, widget, NGL_EVENT_RESHAPE, &area);
+	ngl_send_event(driver, widget, NGL_EVENT_RESHAPE, &widget->area);
 }
 
 

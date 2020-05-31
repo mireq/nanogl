@@ -116,7 +116,7 @@ void ngl_send_event(ngl_driver_t *driver, ngl_widget_t *widget, ngl_event_t even
 void ngl_send_events(ngl_driver_t *driver, ngl_widget_t **widgets, size_t count, ngl_event_t event, void *data);
 
 /* Initialize widget */
-void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_event, ngl_area_t area, void *widget_priv, void *init_data);
+void ngl_widget_init(ngl_driver_t *driver, ngl_widget_t *widget, ngl_widget_process_event_fn process_event, ngl_area_t *area, void *widget_priv, void *init_data);
 
 /* Destroy widget */
 void ngl_widget_destroy(ngl_driver_t *driver, ngl_widget_t *widget);
