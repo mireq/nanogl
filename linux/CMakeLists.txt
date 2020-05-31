@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 project(linux)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../simulator/src ${CMAKE_CURRENT_BINARY_DIR}/simulator)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/font_render/ ${CMAKE_CURRENT_BINARY_DIR}/font_render)
 
 include_directories(
 	${ESP_SIMULATOR_INCLUDE_DIRECTORIES}
@@ -13,6 +14,8 @@ include_directories(
 	"${CMAKE_SOURCE_DIR}/../components/mad/include/"
 	"${CMAKE_SOURCE_DIR}/../components/"
 	"${CMAKE_SOURCE_DIR}/../components/nanogl/include/"
+	"${CMAKE_SOURCE_DIR}/../components/font_render/include/"
+	"${CMAKE_SOURCE_DIR}/../components/font_render/freetype2/include/"
 	"${CMAKE_SOURCE_DIR}/../main/"
 	"$ENV{IDF_PATH}/components/log/include/"
 	"$ENV{IDF_PATH}/components/esp_common/include/"
@@ -37,6 +40,7 @@ target_include_directories(freertos PUBLIC "${CMAKE_SOURCE_DIR}/include/")
 target_link_libraries(
 	${PROJECT_NAME}
 	simulator
+	font_render
 	GL
 	GLEW
 	glut
