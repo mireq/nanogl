@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(linux C ASM)
+project(linux)
 include(utilities.cmake)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../simulator/src ${CMAKE_CURRENT_BINARY_DIR}/simulator)
@@ -54,5 +54,5 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "linux_simulator")
 add_embedded_file(
 	${PROJECT_NAME}
 	"${CMAKE_SOURCE_DIR}/../main/Ubuntu-R.ttf"
-	TEXT
+	BINARY
 )
