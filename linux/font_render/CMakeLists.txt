@@ -10,13 +10,18 @@ set(FONT_RENDER_SOURCES
 	"freetype2/src/truetype/truetype.c"
 	"freetype2/src/sfnt/sfnt.c"
 	"freetype2/src/smooth/smooth.c"
-	#"font_render.c"
+	"font_render.c"
 )
 
 include_directories(
+	${ESP_SIMULATOR_INCLUDE_DIRECTORIES}
 	"${CMAKE_SOURCE_DIR}/../components/font_render/include/"
 	"${CMAKE_SOURCE_DIR}/../components/font_render/freetype2/include/"
-	"${ESP_CONFIG_DIR}"
+	"$ENV{IDF_PATH}/components/log/include/"
+	"$ENV{IDF_PATH}/components/esp_common/include/"
+	"$ENV{IDF_PATH}/components/esp_event/include/"
+	"$ENV{IDF_PATH}/components/"
+	"${CMAKE_CURRENT_BINARY_DIR}/../../../config/"
 )
 
 add_definitions(-DFT2_BUILD_LIBRARY -Wno-unused-function)

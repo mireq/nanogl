@@ -7,6 +7,7 @@
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
+/*
 typedef FT_Long font_data_size_t;
 typedef FT_UInt font_size_t;
 typedef FT_Byte font_data_t;
@@ -58,3 +59,4 @@ esp_err_t font_render_init(font_render_t *render, font_face_t *face, font_size_t
 void font_render_destroy(font_render_t *render);
 esp_err_t font_load_glyph_metrics(font_render_t *render, uint32_t utf_code);
 esp_err_t font_render_glyph(font_render_t *render, uint32_t utf_code);
+*/

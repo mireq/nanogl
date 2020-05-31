@@ -24,8 +24,11 @@ static long long get_us_time() {
 #endif
 }
 
+extern const uint8_t ttf_start[] asm("_binary_Ubuntu_R_ttf_start");
+extern const uint8_t ttf_end[] asm("_binary_Ubuntu_R_ttf_end");
 
 void gui_loop(ngl_driver_t *driver) {
+	printf("%p\n", ttf_start);
 	long frame = 0;
 	//ngl_buffer_t *buf;
 

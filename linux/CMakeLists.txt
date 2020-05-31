@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(linux)
+project(linux C ASM)
+include(utilities.cmake)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../simulator/src ${CMAKE_CURRENT_BINARY_DIR}/simulator)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/font_render/ ${CMAKE_CURRENT_BINARY_DIR}/font_render)
@@ -28,6 +29,7 @@ add_executable(
 	${PROJECT_NAME}
 	"init.c"
 	"display.c"
+	"${CMAKE_CURRENT_BINARY_DIR}/Ubuntu-R.ttf.S"
 	"${CMAKE_SOURCE_DIR}/../main/gui.c"
 	"${CMAKE_SOURCE_DIR}/../main/main.c"
 	"${CMAKE_SOURCE_DIR}/../components/nanogl/nanogl.c"
@@ -49,3 +51,8 @@ target_link_libraries(
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_ROOT_BUILD_DIR}")
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "linux_simulator")
+add_embedded_file(
+	${PROJECT_NAME}
+	"${CMAKE_SOURCE_DIR}/../main/Ubuntu-R.ttf"
+	TEXT
+)

@@ -6,6 +6,7 @@
 #include "font_render.h"
 
 
+/*
 static FT_Library ft_library = NULL;
 static const char *TAG = "font_render";
 
@@ -223,3 +224,4 @@ esp_err_t font_render_glyph(font_render_t *render, uint32_t utf_code) {
 
 	return ESP_OK;
 }
+*/
