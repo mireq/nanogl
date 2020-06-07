@@ -53,7 +53,7 @@ append_line("#include <stddef.h>\n")
 
 append_line("extern const char *_binary_${varname}_start;")
 append_line("extern const char *_binary_${varname}_end;")
-append_line("extern size_t ${varname}_length;\n")
+append_line("extern const size_t ${varname}_length;\n")
 
 append_line("static const char _binary_${varname}_data[] = {")
 append("${data}")

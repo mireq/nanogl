@@ -3,8 +3,104 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 
+#include "font_cache.h"
 #include "font_render.h"
 
+#include "ft2build.h"
+#include FT_FREETYPE_H
+
+
+static FT_Library ft_library = NULL;
+static const char *TAG = "font_render";
+
+
+#ifndef FONT_ALLOC
+#define FONT_ALLOC MALLOC_CAP_DEFAULT
+#endif
+
+
+struct font_face_priv {
+	// Freetype font object
+	FT_Face ft_face;
+	// Current pixel size
+	unsigned int pixel_size;
+};
+
+
+struct font_render_priv {
+	// Font object
+	font_face_t *font;
+	// Requested pixel size
+	unsigned int pixel_size;
+};
+
+
+esp_err_t font_face_init(font_face_t *face, const void *data, size_t size) {
+	face->priv = (struct font_face_priv *)heap_caps_malloc(sizeof(struct font_face_priv), FONT_ALLOC);
+	if (face->priv == NULL) {
+		return ESP_FAIL;
+	}
+
+	FT_Error err;
+	face->priv->pixel_size = 0;
+
+	if (ft_library == NULL) {
+		err = FT_Init_FreeType(&ft_library);
+		if (err) {
+			ESP_LOGE(TAG, "Freetype not loaded: %d", err);
+			heap_caps_free(face->priv);
+			face->priv = NULL;
+			return ESP_FAIL;
+		}
+	}
+
+	err = FT_New_Memory_Face(ft_library, data, size, 0, &face->priv->ft_face);
+	if (err) {
+		ESP_LOGE(TAG, "Call FT_New_Memory_Face failed: %d", err);
+		heap_caps_free(face->priv);
+		face->priv = NULL;
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
+void font_face_destroy(font_face_t *face) {
+	if (face->priv == NULL) {
+		return;
+	}
+	FT_Done_Face(face->priv->ft_face);
+	heap_caps_free(face->priv);
+	face->priv = NULL;
+}
+
+static esp_err_t font_face_set_pixel_size(font_face_t *face, unsigned int pixel_size) {
+	if (face->priv->pixel_size != pixel_size) {
+		FT_Error err = FT_Set_Pixel_Sizes(face->priv->ft_face, 0, pixel_size);
+		if (err) {
+			ESP_LOGE(TAG, "Set font size failed: %d", err);
+			return ESP_FAIL;
+		}
+	}
+	return ESP_OK;
+}
+
+esp_err_t font_render_init(font_render_t *render, font_face_t *face, unsigned int pixel_size, size_t cache_size) {
+	render->priv = (struct font_render_priv *)heap_caps_malloc(sizeof(struct font_render_priv), FONT_ALLOC);
+	if (render->priv == NULL) {
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
+void font_render_destroy(font_render_t *render) {
+	if (render->priv == NULL) {
+		return;
+	}
+	heap_caps_free(render->priv);
+	render->priv = NULL;
+}
 
 /*
 static FT_Library ft_library = NULL;
@@ -55,45 +151,6 @@ static esp_err_t font_cache_init(font_render_t *render) {
 
 	memset(render->glyph_cache_records, 0, sizeof(glyph_cache_record_t) * render->cache_size);
 
-	return ESP_OK;
-}
-
-
-esp_err_t font_face_init(font_face_t *face, const font_data_t *data, font_data_size_t size) {
-	FT_Error err;
-
-	face->pixel_size = 0;
-
-	if (ft_library == NULL) {
-		err = FT_Init_FreeType(&ft_library);
-		if (err) {
-			ESP_LOGE(TAG, "Freetype not loaded: %d", err);
-			return ESP_FAIL;
-		}
-	}
-
-	err = FT_New_Memory_Face(ft_library, data, size, 0, &face->ft_face);
-	if (err) {
-		ESP_LOGE(TAG, "New face failed: %d", err);
-		return ESP_FAIL;
-	}
-
-	return ESP_OK;
-}
-
-void font_face_destroy(font_face_t *face) {
-	FT_Done_Face(face->ft_face);
-}
-
-
-esp_err_t font_face_set_pixel_size(font_face_t *face, font_size_t pixel_size) {
-	if (face->pixel_size != pixel_size) {
-		FT_Error err = FT_Set_Pixel_Sizes(face->ft_face, 0, pixel_size);
-		if (err) {
-			ESP_LOGE(TAG, "Set font size failed: %d", err);
-			return ESP_FAIL;
-		}
-	}
 	return ESP_OK;
 }
 

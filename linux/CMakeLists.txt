@@ -41,8 +41,8 @@ target_include_directories(freertos PUBLIC "${CMAKE_SOURCE_DIR}/include/")
 
 target_link_libraries(
 	${PROJECT_NAME}
-	simulator
 	font_render
+	simulator
 	GL
 	GLEW
 	glut

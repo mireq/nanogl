@@ -11,6 +11,7 @@ set(FONT_RENDER_SOURCES
 	"freetype2/src/sfnt/sfnt.c"
 	"freetype2/src/smooth/smooth.c"
 	"font_render.c"
+	"font_cache.c"
 )
 
 include_directories(

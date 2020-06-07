@@ -14,7 +14,7 @@
 #include "sdkconfig.h"
 
 
-const char *TAG = "st7789";
+static const char *TAG = "st7789";
 
 
 static void st7789_pre_cb(spi_transaction_t *transaction) {

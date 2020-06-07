@@ -2,15 +2,29 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include "esp_err.h"
 
-#include "ft2build.h"
-#include FT_FREETYPE_H
+
+struct font_face_priv;
+struct font_render_priv;
+
+typedef struct font_face {
+	struct font_face_priv *priv;
+} font_face_t;
+typedef struct font_render {
+	struct font_render_priv *priv;
+} font_render_t;
+
+
+esp_err_t font_face_init(font_face_t *face, const void *data, size_t size);
+void font_face_destroy(font_face_t *face);
+
+esp_err_t font_render_init(font_render_t *render, font_face_t *face, unsigned int pixel_size, size_t cache_size);
+void font_render_destroy(font_render_t *render);
 
 /*
-typedef FT_Long font_data_size_t;
-typedef FT_UInt font_size_t;
-typedef FT_Byte font_data_t;
 
 
 typedef struct glyph_cache_record {

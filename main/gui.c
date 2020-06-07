@@ -5,14 +5,15 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 
-#include "nanogl/rectangle.h"
+#include "font_render.h"
 #include "gui.h"
-
+#include "nanogl/rectangle.h"
 
 #ifndef SIMULATOR
 #include "esp_timer.h"
 #endif
 
+static const char *TAG = "gui";
 
 static long long get_us_time() {
 #ifdef SIMULATOR
@@ -24,10 +25,35 @@ static long long get_us_time() {
 #endif
 }
 
-extern const char *_binary_Ubuntu_R_ttf_end;
+extern const char *_binary_Ubuntu_R_ttf_start;
+extern const size_t Ubuntu_R_ttf_length;
+
+#include "font_cache.h"
 
 void gui_loop(ngl_driver_t *driver) {
-	printf("%p\n", _binary_Ubuntu_R_ttf_end);
+	font_face_t ubuntu_font;
+	if (font_face_init(&ubuntu_font, _binary_Ubuntu_R_ttf_start, Ubuntu_R_ttf_length) != ESP_OK) {
+		ESP_LOGE(TAG, "Font not initialized");
+		return;
+	}
+
+	font_render_t ubuntu_font_16;
+	if (font_render_init(&ubuntu_font_16, &ubuntu_font, 16, 16) != ESP_OK) {
+		ESP_LOGE(TAG, "Font render not initialized");
+		font_face_destroy(&ubuntu_font);
+		return;
+	}
+
+	font_cache_t font_cache;
+	font_cache_init(&font_cache, 2);
+	font_cache_destroy(&font_cache);
+
+	font_render_destroy(&ubuntu_font_16);
+	font_face_destroy(&ubuntu_font);
+
+
+	//printf("%p\n", _binary_Ubuntu_R_ttf_end);
+
 	long frame = 0;
 	//ngl_buffer_t *buf;
 
@@ -55,23 +81,9 @@ void gui_loop(ngl_driver_t *driver) {
 	ngl_widget_t *screen[] = {&rectangle};
 	while (1) {
 		frame++;
-		uint64_t us_before_frame = get_us_time();
-		/*
-		do {
-			buf = ngl_get_buffer(driver);
-			ngl_color_t *framebuffer = (ngl_color_t *)buf->buffer;
-			for (size_t y = 0; y < buf->area.height; ++y) {
-				for (size_t x = 0; x < buf->area.width; ++x) {
-					framebuffer[x + y * buf->area.width].rgba.r = (x + buf->area.x)*256/driver->width;
-					framebuffer[x + y * buf->area.width].rgba.b = (y + buf->area.y)*256/driver->height;
-					framebuffer[x + y * buf->area.width].rgba.g = (framebuffer[x + y * buf->area.width].rgba.r + framebuffer[x + y * buf->area.width].rgba.b) >> 1;
-				}
-			}
-			ngl_flush(driver);
-		} while (buf->area.y + buf->area.height < driver->height);
-		*/
+		//uint64_t us_before_frame = get_us_time();
 		ngl_draw_frame(driver, screen, sizeof(screen) / sizeof(ngl_widget_t *));
-		uint64_t us_after_frame = get_us_time();
-		printf("f: %08ld, time: %.4f ms\n", frame, (double)(us_after_frame - us_before_frame) / 1000.);
+		//uint64_t us_after_frame = get_us_time();
+		//printf("f: %08ld, time: %.4f ms\n", frame, (double)(us_after_frame - us_before_frame) / 1000.);
 	}
 }
