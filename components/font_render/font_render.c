@@ -28,6 +28,8 @@ struct font_face_priv {
 	int max_glyph_width;
 	// Maximum glyph height in pixels
 	int max_glyph_height;
+	// Line height in pixels
+	int line_height;
 };
 
 
@@ -96,8 +98,10 @@ esp_err_t font_render_init(font_render_t *render, font_face_t *face, unsigned in
 	}
 
 	font_face_set_pixel_size(face, pixel_size);
+
 	face->priv->max_glyph_width = FT_MulFix((face->priv->ft_face->bbox.xMax - face->priv->ft_face->bbox.xMin), face->priv->ft_face->size->metrics.x_scale) + ((1 << 6) - 1) >> 6;
 	face->priv->max_glyph_height = FT_MulFix((face->priv->ft_face->bbox.yMax - face->priv->ft_face->bbox.yMin), face->priv->ft_face->size->metrics.x_scale) + ((1 << 6) - 1) >> 6;
+	face->priv->line_height = face->priv->ft_face->size->metrics.height;
 
 	return ESP_OK;
 }
