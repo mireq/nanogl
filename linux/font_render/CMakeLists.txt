@@ -25,7 +25,7 @@ include_directories(
 	"${CMAKE_CURRENT_BINARY_DIR}/../../../config/"
 )
 
-add_definitions(-DFT2_BUILD_LIBRARY -Wno-unused-function)
+add_definitions(-DFT2_BUILD_LIBRARY -Wno-unused-function -g3 -ggdb)
 
 list(TRANSFORM FONT_RENDER_SOURCES PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/../../components/font_render/)
 

@@ -18,11 +18,30 @@ typedef struct font_render {
 } font_render_t;
 
 
+typedef struct font_area {
+	int x;
+	int y;
+	int width;
+	int height;
+} font_area_t;
+
+typedef struct font_delta {
+	int x;
+	int y;
+} font_delta_t;
+
+typedef struct font_glyph_metric {
+	font_area_t area;
+	font_delta_t advance;
+} font_glyph_metric_t;
+
+
 esp_err_t font_face_init(font_face_t *face, const void *data, size_t size);
 void font_face_destroy(font_face_t *face);
 
 esp_err_t font_render_init(font_render_t *render, font_face_t *face, unsigned int pixel_size, size_t cache_size);
 void font_render_destroy(font_render_t *render);
+
 
 /*
 

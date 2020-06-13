@@ -44,9 +44,9 @@ void gui_loop(ngl_driver_t *driver) {
 		return;
 	}
 
-	font_cache_t font_cache;
-	font_cache_init(&font_cache, 2);
-	font_cache_destroy(&font_cache);
+	//font_cache_t font_cache;
+	//font_cache_init(&font_cache, 4, 1);
+	//font_cache_destroy(&font_cache);
 
 	font_render_destroy(&ubuntu_font_16);
 	font_face_destroy(&ubuntu_font);
@@ -82,7 +82,13 @@ void gui_loop(ngl_driver_t *driver) {
 	while (1) {
 		frame++;
 		//uint64_t us_before_frame = get_us_time();
-		ngl_draw_frame(driver, screen, sizeof(screen) / sizeof(ngl_widget_t *));
+		//ngl_draw_frame(driver, screen, sizeof(screen) / sizeof(ngl_widget_t *));
+		//bool found;
+		//for (size_t i = 0; i < 500; ++i) {
+		//	void *data = font_cache_get(&font_cache, i & 0x03, &found);
+		//	printf("%ld %p\n", i & 0x03, data);
+		//}
+
 		//uint64_t us_after_frame = get_us_time();
 		//printf("f: %08ld, time: %.4f ms\n", frame, (double)(us_after_frame - us_before_frame) / 1000.);
 	}

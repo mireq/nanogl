@@ -2,15 +2,13 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "esp_err.h"
 
 
-typedef uint16_t font_cache_index_type;
-typedef uint32_t font_cache_glyph_type;
-typedef uint32_t font_cache_access_type;
-#define FONT_CACHE_NOT_FOUND UINT16_MAX
+typedef uint32_t font_cache_glyph_t;
 
 
 struct font_cache_priv;
@@ -19,5 +17,6 @@ typedef struct font_cache {
 } font_cache_t;
 
 
-esp_err_t font_cache_init(font_cache_t *cache, size_t cache_size);
+esp_err_t font_cache_init(font_cache_t *cache, size_t cache_size, size_t item_size);
 void font_cache_destroy(font_cache_t *cache);
+void *font_cache_get(font_cache_t *cache, font_cache_glyph_t glyph, bool *found);
