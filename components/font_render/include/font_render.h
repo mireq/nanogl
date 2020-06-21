@@ -6,7 +6,6 @@
 
 #include "esp_err.h"
 
-
 struct font_face_priv;
 struct font_render_priv;
 
@@ -17,6 +16,7 @@ typedef struct font_render {
 	struct font_render_priv *priv;
 } font_render_t;
 
+typedef uint32_t font_utf_code_t;
 
 typedef struct font_area {
 	int x;
@@ -30,10 +30,21 @@ typedef struct font_delta {
 	int y;
 } font_delta_t;
 
-typedef struct font_glyph_metric {
+typedef struct font_pos {
+	int x;
+	int y;
+} font_pos_t;
+
+typedef struct font_glyph_placement {
+	/* Area required for glyph */
 	font_area_t area;
+	/* Delta for next glyph */
 	font_delta_t advance;
-} font_glyph_metric_t;
+	/* For internal use */
+	union {
+		unsigned int uint;
+	} code;
+} font_glyph_placement_t;
 
 
 esp_err_t font_face_init(font_face_t *face, const void *data, size_t size);
@@ -41,6 +52,9 @@ void font_face_destroy(font_face_t *face);
 
 esp_err_t font_render_init(font_render_t *render, font_face_t *face, unsigned int pixel_size, size_t cache_size);
 void font_render_destroy(font_render_t *render);
+
+int font_get_line_height(font_render_t *render);
+font_glyph_placement_t font_place_glyph(font_render_t *render, font_utf_code_t code, font_pos_t *pos, font_glyph_placement_t *previous);
 
 
 /*

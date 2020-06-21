@@ -48,9 +48,6 @@ void gui_loop(ngl_driver_t *driver) {
 	//font_cache_init(&font_cache, 4, 1);
 	//font_cache_destroy(&font_cache);
 
-	font_render_destroy(&ubuntu_font_16);
-	font_face_destroy(&ubuntu_font);
-
 
 	//printf("%p\n", _binary_Ubuntu_R_ttf_end);
 
@@ -80,6 +77,8 @@ void gui_loop(ngl_driver_t *driver) {
 
 	ngl_widget_t *screen[] = {&rectangle};
 	while (1) {
+		font_pos_t pos = {0, 0};
+		font_glyph_placement_t place = font_place_glyph(&ubuntu_font_16, 'L', &pos, NULL);
 		frame++;
 		//uint64_t us_before_frame = get_us_time();
 		//ngl_draw_frame(driver, screen, sizeof(screen) / sizeof(ngl_widget_t *));
@@ -92,4 +91,7 @@ void gui_loop(ngl_driver_t *driver) {
 		//uint64_t us_after_frame = get_us_time();
 		//printf("f: %08ld, time: %.4f ms\n", frame, (double)(us_after_frame - us_before_frame) / 1000.);
 	}
+
+	font_render_destroy(&ubuntu_font_16);
+	font_face_destroy(&ubuntu_font);
 }

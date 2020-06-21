@@ -24,12 +24,8 @@ struct font_face_priv {
 	FT_Face ft_face;
 	// Current pixel size
 	unsigned int pixel_size;
-	// Maximum glyph width in pixels
-	int max_glyph_width;
-	// Maximum glyph height in pixels
-	int max_glyph_height;
-	// Line height in pixels
-	int line_height;
+	// Kerning support
+	bool has_kerning;
 };
 
 
@@ -38,7 +34,25 @@ struct font_render_priv {
 	font_face_t *font;
 	// Requested pixel size
 	unsigned int pixel_size;
+	// Maximum glyph width in pixels
+	int max_glyph_width;
+	// Maximum glyph height in pixels
+	int max_glyph_height;
+	// Line height in pixels
+	int line_height;
+	// Origin position from bottom in pixels
+	int origin_position;
+
+	// Cache
+	font_cache_t glyph_metric_cache;
 };
+
+typedef struct font_glyph_metric {
+	// Area required for glyph
+	font_area_t area;
+	// Advance
+	font_delta_t advance;
+} font_glyph_metric_t;
 
 
 esp_err_t font_face_init(font_face_t *face, const void *data, size_t size) {
@@ -67,6 +81,8 @@ esp_err_t font_face_init(font_face_t *face, const void *data, size_t size) {
 		face->priv = NULL;
 		return ESP_FAIL;
 	}
+
+	face->priv->has_kerning = FT_HAS_KERNING(face->priv->ft_face);
 
 	return ESP_OK;
 }
@@ -97,11 +113,21 @@ esp_err_t font_render_init(font_render_t *render, font_face_t *face, unsigned in
 		return ESP_FAIL;
 	}
 
-	font_face_set_pixel_size(face, pixel_size);
+	if (font_cache_init(&render->priv->glyph_metric_cache, cache_size, sizeof(font_glyph_metric_t)) != ESP_OK) {
+		ESP_LOGE(TAG, "Font cache not initialized");
+		heap_caps_free(render->priv);
+		render->priv = NULL;
+		return ESP_FAIL;
+	}
 
-	face->priv->max_glyph_width = FT_MulFix((face->priv->ft_face->bbox.xMax - face->priv->ft_face->bbox.xMin), face->priv->ft_face->size->metrics.x_scale) + ((1 << 6) - 1) >> 6;
-	face->priv->max_glyph_height = FT_MulFix((face->priv->ft_face->bbox.yMax - face->priv->ft_face->bbox.yMin), face->priv->ft_face->size->metrics.x_scale) + ((1 << 6) - 1) >> 6;
-	face->priv->line_height = face->priv->ft_face->size->metrics.height;
+	render->priv->font = face;
+	render->priv->pixel_size = pixel_size;
+	font_face_set_pixel_size(face, render->priv->pixel_size);
+
+	render->priv->max_glyph_width = FT_MulFix((face->priv->ft_face->bbox.xMax - face->priv->ft_face->bbox.xMin), face->priv->ft_face->size->metrics.x_scale) + ((1 << 6) - 1) >> 6;
+	render->priv->max_glyph_height = FT_MulFix((face->priv->ft_face->bbox.yMax - face->priv->ft_face->bbox.yMin), face->priv->ft_face->size->metrics.x_scale) + ((1 << 6) - 1) >> 6;
+	render->priv->line_height = (face->priv->ft_face->size->metrics.height) >> 6;
+	render->priv->origin_position = (-face->priv->ft_face->size->metrics.descender) >> 6;
 
 	return ESP_OK;
 }
@@ -110,8 +136,42 @@ void font_render_destroy(font_render_t *render) {
 	if (render->priv == NULL) {
 		return;
 	}
+	font_cache_destroy(&render->priv->glyph_metric_cache);
 	heap_caps_free(render->priv);
 	render->priv = NULL;
+}
+
+int font_get_line_height(font_render_t *render) {
+	return render->priv->line_height;
+}
+
+font_glyph_placement_t font_place_glyph(font_render_t *render, font_utf_code_t code, font_pos_t *pos, font_glyph_placement_t *previous) {
+	font_glyph_placement_t placement = {
+		.area = {0, 0, 0, 0},
+		.advance = {0, 0},
+		.code.uint = code
+	};
+
+	FT_Face face = render->priv->font->priv->ft_face;
+	FT_Error err;
+	err = FT_Load_Char(face, code, FT_LOAD_RENDER);
+	if (err) {
+		return placement;
+	}
+
+	FT_GlyphSlot slot = face->glyph;
+
+	font_glyph_metric_t metric_;
+	font_glyph_metric_t *metric = &metric_;
+
+	metric->area.x = slot->bitmap_left;
+	metric->area.y = render->priv->line_height - slot->bitmap_top - render->priv->origin_position;
+	metric->area.width = slot->bitmap.width;
+	metric->area.height = slot->bitmap.rows;
+	metric->advance.x = slot->advance.x >> 6;
+	metric->advance.y = slot->advance.y >> 6;
+
+	return placement;
 }
 
 /*
