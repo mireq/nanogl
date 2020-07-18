@@ -32,30 +32,31 @@ uint8_t u8_encode(char *str, uint32_t ucode) {
 }
 
 uint8_t u8_decode(uint32_t *ucode, const char *str) {
+	const uint8_t *ustr = (const uint8_t *)str;
 	*ucode = 0;
-	if (*str == 0) {
+	if (*ustr == 0) {
 		return 0;
 	}
-	else if (*str < 0x80) {
-		*ucode = *str;
+	else if (*ustr < 0x80) {
+		*ucode = *ustr;
 		return 1;
 	}
-	else if (*str < 0xe0) {
-		*ucode = *str & 0x1f;
-		*ucode = (*ucode << 6) | (*++str & 0x3f);
+	else if (*ustr < 0xe0) {
+		*ucode = *ustr & 0x1f;
+		*ucode = (*ucode << 6) | (*++ustr & 0x3f);
 		return 2;
 	}
-	else if (*str < 0xf0) {
-		*ucode = *str & 0x0f;
-		*ucode = (*ucode << 6) | (*++str & 0x3f);
-		*ucode = (*ucode << 6) | (*++str & 0x3f);
+	else if (*ustr < 0xf0) {
+		*ucode = *ustr & 0x0f;
+		*ucode = (*ucode << 6) | (*++ustr & 0x3f);
+		*ucode = (*ucode << 6) | (*++ustr & 0x3f);
 		return 3;
 	}
-	else if (*str < 0xf5) {
-		*ucode = *str & 0x07;
-		*ucode = (*ucode << 6) | (*++str & 0x3f);
-		*ucode = (*ucode << 6) | (*++str & 0x3f);
-		*ucode = (*ucode << 6) | (*++str & 0x3f);
+	else if (*ustr < 0xf5) {
+		*ucode = *ustr & 0x07;
+		*ucode = (*ucode << 6) | (*++ustr & 0x3f);
+		*ucode = (*ucode << 6) | (*++ustr & 0x3f);
+		*ucode = (*ucode << 6) | (*++ustr & 0x3f);
 		return 4;
 	}
 	return 0;
